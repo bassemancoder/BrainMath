@@ -1,0 +1,62 @@
+.boardContainer {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.board {
+  display: grid;
+  gap: 4px;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.empty {
+  width: 44px;
+  height: 44px;
+}
+
+.equalsSign {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #495057;
+}
+
+/* Mobile optimization */
+@media (max-width: 480px) {
+  .boardContainer {
+    padding: 0.5rem;
+  }
+
+  .board {
+    gap: 3px;
+    padding: 0.75rem;
+  }
+
+  .empty,
+  .equalsSign {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 360px) {
+  .board {
+    gap: 2px;
+    padding: 0.5rem;
+  }
+
+  .empty,
+  .equalsSign {
+    width: 36px;
+    height: 36px;
+    font-size: 1.25rem;
+  }
+}

@@ -1,0 +1,259 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+  position: relative;
+}
+
+.closeButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f1f3f5;
+  border-radius: 50%;
+  font-size: 1rem;
+  color: #868e96;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.closeButton:hover {
+  background: #e9ecef;
+  color: #495057;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.celebration {
+  font-size: 4rem;
+  margin-bottom: 0.5rem;
+  animation: bounce 0.6s ease infinite alternate;
+}
+
+@keyframes bounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-10px); }
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #212529;
+  margin: 0 0 1.5rem 0;
+}
+
+.stats {
+  margin-bottom: 1.5rem;
+}
+
+.time {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.timeLabel {
+  font-size: 0.875rem;
+  color: #868e96;
+}
+
+.timeValue {
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #339af0;
+}
+
+.record {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #ffd43b, #fab005);
+  color: #7c4a03;
+  font-weight: 600;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.bestTime {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #868e96;
+}
+
+.hashSection {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.hashLabel {
+  display: block;
+  font-size: 0.75rem;
+  color: #868e96;
+  margin-bottom: 0.25rem;
+}
+
+.hash {
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #339af0;
+  letter-spacing: 0.1em;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 2px solid #dee2e6;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.button:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+.button.primary {
+  background: #339af0;
+  border-color: #339af0;
+  color: #ffffff;
+}
+
+.button.primary:hover {
+  background: #228be6;
+  border-color: #228be6;
+}
+
+.shareSection {
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.shareLabel {
+  display: block;
+  font-size: 0.875rem;
+  color: #868e96;
+  margin-bottom: 0.75rem;
+}
+
+.shareButtons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.shareButton {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #495057;
+  background: #f1f3f5;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.shareButton:hover {
+  background: #e9ecef;
+}
+
+.shareButton.copied {
+  background: #d3f9d8;
+  color: #2f9e44;
+}
+
+/* Mobile optimization */
+@media (max-width: 480px) {
+  .modal {
+    padding: 1.5rem;
+  }
+
+  .celebration {
+    font-size: 3rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .timeValue {
+    font-size: 2rem;
+  }
+
+  .hash {
+    font-size: 1.25rem;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .button {
+    padding: 0.75rem;
+  }
+}

@@ -1,0 +1,120 @@
+/**
+ * Tests for SolverService
+ * Updated for crossword-style grid
+ */
+
+import { describe, it, expect } from 'vitest';
+import {
+  findFirstEmptyCell,
+  isGridComplete,
+  isValidSolution,
+  solvePuzzle,
+  countSolutions,
+  hasUniqueSolution,
+} from '../services/SolverService';
+import {
+  createEmptyGrid,
+  placeHorizontalEquation,
+  markCellsAsEditable,
+} from '../services/GridService';
+import type { Grid } from '../types';
+
+/**
+ * Creates a simple test grid with one horizontal equation
+ * Example: 3 + 4 = 7
+ */
+function createSimpleTestGrid(): Grid {
+  let grid = createEmptyGrid(3, 5, 1);
+  grid = placeHorizontalEquation(grid, 0, 0, 0, [3, 4], ['+'], 7);
+  return grid;
+}
+
+/**
+ * Creates a test grid with one equation, one cell editable
+ */
+function createEditableTestGrid(): Grid {
+  let grid = createSimpleTestGrid();
+  // Make the second number editable
+  grid = markCellsAsEditable(grid, [{ row: 0, col: 2 }]);
+  return grid;
+}
+
+describe('SolverService', () => {
+  describe('findFirstEmptyCell', () => {
+    it('returns null for complete grid', () => {
+      const grid = createSimpleTestGrid();
+      const result = findFirstEmptyCell(grid);
+      expect(result).toBeNull();
+    });
+
+    it('finds empty cell in incomplete grid', () => {
+      const grid = createEditableTestGrid();
+      const result = findFirstEmptyCell(grid);
+      expect(result).not.toBeNull();
+      expect(result?.row).toBe(0);
+      expect(result?.col).toBe(2);
+    });
+  });
+
+  describe('isGridComplete', () => {
+    it('returns true for complete grid', () => {
+      const grid = createSimpleTestGrid();
+      expect(isGridComplete(grid)).toBe(true);
+    });
+
+    it('returns false for incomplete grid', () => {
+      const grid = createEditableTestGrid();
+      expect(isGridComplete(grid)).toBe(false);
+    });
+  });
+
+  describe('isValidSolution', () => {
+    it('returns true for valid complete grid', () => {
+      const grid = createSimpleTestGrid();
+      expect(isValidSolution(grid)).toBe(true);
+    });
+
+    it('returns false for incomplete grid', () => {
+      const grid = createEditableTestGrid();
+      expect(isValidSolution(grid)).toBe(false);
+    });
+  });
+
+  describe('solvePuzzle', () => {
+    it('solves a puzzle with one missing value', () => {
+      const grid = createEditableTestGrid();
+      const solution = solvePuzzle(grid);
+      
+      expect(solution).not.toBeNull();
+      expect(isValidSolution(solution!)).toBe(true);
+    });
+
+    it('returns correct value for solved cell', () => {
+      const grid = createEditableTestGrid();
+      const solution = solvePuzzle(grid);
+      
+      expect(solution).not.toBeNull();
+      // The second number should be 4 (3 + 4 = 7)
+      const solvedCell = solution!.cells[0]?.[2];
+      expect(solvedCell).not.toBeNull();
+      if (solvedCell && 'value' in solvedCell) {
+        expect(solvedCell.value).toBe(4);
+      }
+    });
+  });
+
+  describe('countSolutions', () => {
+    it('counts 1 solution for puzzle with unique solution', () => {
+      const grid = createEditableTestGrid();
+      const count = countSolutions(grid, 2);
+      expect(count).toBe(1);
+    });
+  });
+
+  describe('hasUniqueSolution', () => {
+    it('returns true for puzzle with unique solution', () => {
+      const grid = createEditableTestGrid();
+      expect(hasUniqueSolution(grid)).toBe(true);
+    });
+  });
+});

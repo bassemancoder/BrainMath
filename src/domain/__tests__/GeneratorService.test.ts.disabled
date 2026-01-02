@@ -1,0 +1,233 @@
+/**
+ * Tests for GeneratorService
+ * Updated for crossword-style generation
+ */
+
+import { describe, it, expect } from 'vitest';
+import {
+  generatePuzzle,
+  validatePuzzle,
+  getPuzzleStats,
+  generate2NumberEquation,
+  generate3NumberEquation,
+  generateCrosswordLayout,
+} from '../services/GeneratorService';
+import { isValidSolution } from '../services/SolverService';
+import type { RandomGenerator } from '../types';
+import seedrandom from 'seedrandom';
+
+// Create a seeded random generator for testing
+function createTestRng(seed: string): RandomGenerator {
+  const rng = seedrandom(seed);
+  
+  return {
+    random: () => rng(),
+    int: (min: number, max: number) => {
+      return Math.floor(rng() * (max - min + 1)) + min;
+    },
+    pick: <T>(array: T[]): T => {
+      return array[Math.floor(rng() * array.length)];
+    },
+    shuffle: <T>(array: T[]): T[] => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    },
+  };
+}
+
+describe('GeneratorService', () => {
+  describe('generate2NumberEquation', () => {
+    it('generates valid equation with addition', () => {
+      const rng = createTestRng('add-test');
+      const eq = generate2NumberEquation(['+'], rng);
+      
+      expect(eq).not.toBeNull();
+      if (eq) {
+        expect(eq.numbers).toHaveLength(2);
+        expect(eq.operator).toBe('+');
+        expect(eq.result).toBe(eq.numbers[0] + eq.numbers[1]);
+        expect(eq.result).toBeGreaterThan(0);
+      }
+    });
+
+    it('generates valid equation with subtraction (positive result only)', () => {
+      // Run multiple times to ensure we always get positive results
+      for (let i = 0; i < 10; i++) {
+        const eq = generate2NumberEquation(['-'], createTestRng(`sub-${i}`));
+        if (eq) {
+          expect(eq.result).toBeGreaterThan(0);
+          expect(eq.result).toBeLessThanOrEqual(99);
+        }
+      }
+    });
+
+    it('generates equation with numbers 1-9', () => {
+      const rng = createTestRng('range-test');
+      const eq = generate2NumberEquation(['+', '-', '×'], rng);
+      
+      expect(eq).not.toBeNull();
+      if (eq) {
+        expect(eq.numbers[0]).toBeGreaterThanOrEqual(1);
+        expect(eq.numbers[0]).toBeLessThanOrEqual(9);
+        expect(eq.numbers[1]).toBeGreaterThanOrEqual(1);
+        expect(eq.numbers[1]).toBeLessThanOrEqual(9);
+      }
+    });
+  });
+
+  describe('generate3NumberEquation', () => {
+    it('generates valid 3-number equation', () => {
+      const rng = createTestRng('three-test');
+      const eq = generate3NumberEquation(['+', '-'], rng);
+      
+      expect(eq).not.toBeNull();
+      if (eq) {
+        expect(eq.numbers).toHaveLength(3);
+        expect(eq.operators).toHaveLength(2);
+        expect(eq.result).toBeGreaterThan(0);
+        expect(eq.result).toBeLessThanOrEqual(99);
+      }
+    });
+
+    it('all numbers are in range 1-9', () => {
+      const rng = createTestRng('range-3');
+      const eq = generate3NumberEquation(['+', '×'], rng);
+      
+      expect(eq).not.toBeNull();
+      if (eq) {
+        for (const num of eq.numbers) {
+          expect(num).toBeGreaterThanOrEqual(1);
+          expect(num).toBeLessThanOrEqual(9);
+        }
+      }
+    });
+  });
+
+  describe('generateCrosswordLayout', () => {
+    it('generates a valid crossword layout for size 3', () => {
+      const rng = createTestRng('layout-3');
+      const grid = generateCrosswordLayout(3, 1, rng);
+      
+      expect(grid).not.toBeNull();
+      if (grid) {
+        expect(grid.equations.length).toBeGreaterThan(0);
+        expect(isValidSolution(grid)).toBe(true);
+      }
+    });
+
+    it('generates consistent layout with same seed', () => {
+      const rng1 = createTestRng('consistent');
+      const rng2 = createTestRng('consistent');
+      
+      const grid1 = generateCrosswordLayout(3, 1, rng1);
+      const grid2 = generateCrosswordLayout(3, 1, rng2);
+      
+      expect(grid1).not.toBeNull();
+      expect(grid2).not.toBeNull();
+      
+      // Should be identical
+      expect(JSON.stringify(grid1)).toEqual(JSON.stringify(grid2));
+    });
+
+    it('generates different layouts with different seeds', () => {
+      const rng1 = createTestRng('seed-x');
+      const rng2 = createTestRng('seed-y');
+      
+      const grid1 = generateCrosswordLayout(3, 1, rng1);
+      const grid2 = generateCrosswordLayout(3, 1, rng2);
+      
+      expect(grid1).not.toBeNull();
+      expect(grid2).not.toBeNull();
+      
+      // Should be different
+      expect(JSON.stringify(grid1)).not.toEqual(JSON.stringify(grid2));
+    });
+  });
+
+  describe('generatePuzzle', () => {
+    it('generates puzzle from valid hash', () => {
+      const rng = createTestRng('ABCD');
+      const puzzle = generatePuzzle('31ABCD', rng);
+      
+      expect(puzzle).not.toBeNull();
+      expect(puzzle?.hash).toBe('31ABCD');
+      expect(puzzle?.difficulty).toBe(1);
+    });
+
+    it('generates puzzle with unique solution', () => {
+      const rng = createTestRng('TEST');
+      const puzzle = generatePuzzle('31TEST', rng);
+      
+      expect(puzzle).not.toBeNull();
+      if (puzzle) {
+        expect(validatePuzzle(puzzle)).toBe(true);
+      }
+    });
+
+    it('same hash produces identical puzzle', () => {
+      const rng1 = createTestRng('SAME');
+      const rng2 = createTestRng('SAME');
+      
+      const puzzle1 = generatePuzzle('31SAME', rng1);
+      const puzzle2 = generatePuzzle('31SAME', rng2);
+      
+      expect(puzzle1).not.toBeNull();
+      expect(puzzle2).not.toBeNull();
+      
+      // Solutions should be identical
+      expect(JSON.stringify(puzzle1?.solution)).toEqual(JSON.stringify(puzzle2?.solution));
+    });
+
+    it('solution is valid', () => {
+      const rng = createTestRng('SOLV');
+      const puzzle = generatePuzzle('31SOLV', rng);
+      
+      expect(puzzle).not.toBeNull();
+      if (puzzle) {
+        expect(isValidSolution(puzzle.solution)).toBe(true);
+      }
+    });
+  });
+
+  describe('getPuzzleStats', () => {
+    it('returns correct statistics', () => {
+      const rng = createTestRng('STAT');
+      const puzzle = generatePuzzle('31STAT', rng);
+      
+      expect(puzzle).not.toBeNull();
+      if (puzzle) {
+        const stats = getPuzzleStats(puzzle);
+        
+        expect(stats.totalCells).toBeGreaterThan(0);
+        expect(stats.filledCells + stats.emptyCells).toBe(stats.totalCells);
+        expect(stats.difficulty).toBe(1);
+      }
+    });
+
+    it('easy puzzles have more filled cells than hard puzzles', () => {
+      const rngEasy = createTestRng('EASY');
+      const rngHard = createTestRng('HARD');
+      
+      const easyPuzzle = generatePuzzle('31EASY', rngEasy);
+      const hardPuzzle = generatePuzzle('33HARD', rngHard);
+      
+      expect(easyPuzzle).not.toBeNull();
+      expect(hardPuzzle).not.toBeNull();
+      
+      if (easyPuzzle && hardPuzzle) {
+        const easyStats = getPuzzleStats(easyPuzzle);
+        const hardStats = getPuzzleStats(hardPuzzle);
+        
+        // Easy should have more filled cells (as percentage)
+        const easyFillRate = easyStats.filledCells / easyStats.totalCells;
+        const hardFillRate = hardStats.filledCells / hardStats.totalCells;
+        
+        expect(easyFillRate).toBeGreaterThan(hardFillRate);
+      }
+    });
+  });
+});

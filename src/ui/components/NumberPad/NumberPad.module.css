@@ -1,0 +1,117 @@
+.numberPad {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 400px;
+  justify-content: center;
+}
+
+.numberButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-width: 48px;
+  padding: 0 12px;
+  height: 48px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #495057;
+  background: #ffffff;
+  border: 2px solid #dee2e6;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.numberButton:hover:not(:disabled) {
+  background: #e7f5ff;
+  border-color: #339af0;
+  color: #1971c2;
+}
+
+.numberButton:active:not(:disabled) {
+  background: #339af0;
+  border-color: #1971c2;
+  color: #ffffff;
+  transform: scale(0.95);
+}
+
+.numberButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clearButton {
+  background: #fff5f5;
+  border-color: #ffc9c9;
+  color: #c92a2a;
+}
+
+.clearButton:hover:not(:disabled) {
+  background: #ffe3e3;
+  border-color: #fa5252;
+  color: #c92a2a;
+}
+
+.clearButton:active:not(:disabled) {
+  background: #fa5252;
+  border-color: #e03131;
+  color: #ffffff;
+}
+
+/* Badge for showing count of duplicate numbers */
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: #339af0;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile optimization */
+@media (max-width: 480px) {
+  .numberPad {
+    padding: 0.75rem;
+  }
+
+  .grid {
+    gap: 6px;
+  }
+
+  .numberButton {
+    width: 48px;
+    height: 48px;
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .grid {
+    gap: 4px;
+  }
+
+  .numberButton {
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+  }
+}

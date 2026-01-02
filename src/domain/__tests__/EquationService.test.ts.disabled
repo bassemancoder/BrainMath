@@ -1,0 +1,224 @@
+/**
+ * Tests for EquationService
+ * Updated for new Equation structure
+ */
+
+import { describe, it, expect } from 'vitest';
+import {
+  getOperatorsForDifficulty,
+  applyOperator,
+  evaluateEquation,
+  getExpectedResult,
+  validateEquation,
+  parseOperator,
+  isEquationComplete,
+} from '../services/EquationService';
+import { createNumberCell, createOperatorCell, createResultCell } from '../entities/Cell';
+import type { Equation } from '../types';
+
+/**
+ * Helper to create a simple 2-number equation
+ */
+function createSimpleEquation(
+  a: number | null,
+  op: '+' | '-' | '×' | '÷',
+  b: number | null,
+  result: number,
+  id: number = 0
+): Equation {
+  return {
+    id,
+    direction: 'horizontal',
+    numberCells: [
+      createNumberCell(0, 0, a, a !== null),
+      createNumberCell(0, 2, b, b !== null),
+    ],
+    operatorCells: [createOperatorCell(0, 1, op)],
+    resultCell: createResultCell(0, 4, result),
+    startRow: 0,
+    startCol: 0,
+  };
+}
+
+/**
+ * Helper to create a 3-number equation
+ */
+function createChainedEquation(
+  a: number | null,
+  op1: '+' | '-' | '×' | '÷',
+  b: number | null,
+  op2: '+' | '-' | '×' | '÷',
+  c: number | null,
+  result: number,
+  id: number = 0
+): Equation {
+  return {
+    id,
+    direction: 'horizontal',
+    numberCells: [
+      createNumberCell(0, 0, a, a !== null),
+      createNumberCell(0, 2, b, b !== null),
+      createNumberCell(0, 4, c, c !== null),
+    ],
+    operatorCells: [
+      createOperatorCell(0, 1, op1),
+      createOperatorCell(0, 3, op2),
+    ],
+    resultCell: createResultCell(0, 6, result),
+    startRow: 0,
+    startCol: 0,
+  };
+}
+
+describe('EquationService', () => {
+  describe('getOperatorsForDifficulty', () => {
+    it('returns +,- for easy difficulty', () => {
+      const operators = getOperatorsForDifficulty(1);
+      expect(operators).toEqual(['+', '-']);
+    });
+
+    it('returns +,-,× for medium difficulty', () => {
+      const operators = getOperatorsForDifficulty(2);
+      expect(operators).toEqual(['+', '-', '×']);
+    });
+
+    it('returns +,-,×,÷ for hard difficulty', () => {
+      const operators = getOperatorsForDifficulty(3);
+      expect(operators).toEqual(['+', '-', '×', '÷']);
+    });
+  });
+
+  describe('applyOperator', () => {
+    it('handles addition', () => {
+      expect(applyOperator(3, '+', 4)).toBe(7);
+      expect(applyOperator(0, '+', 0)).toBe(0);
+    });
+
+    it('handles subtraction with positive result', () => {
+      expect(applyOperator(5, '-', 3)).toBe(2);
+    });
+    
+    it('returns null for subtraction with negative result', () => {
+      // Now negative results are not allowed
+      expect(applyOperator(3, '-', 5)).toBeNull();
+    });
+
+    it('handles multiplication', () => {
+      expect(applyOperator(3, '×', 4)).toBe(12);
+      expect(applyOperator(0, '×', 5)).toBe(0);
+    });
+
+    it('handles division', () => {
+      expect(applyOperator(12, '÷', 3)).toBe(4);
+      expect(applyOperator(15, '÷', 5)).toBe(3);
+    });
+
+    it('returns null for division by zero', () => {
+      expect(applyOperator(5, '÷', 0)).toBeNull();
+    });
+
+    it('returns null for non-integer division', () => {
+      expect(applyOperator(5, '÷', 2)).toBeNull();
+    });
+  });
+
+  describe('evaluateEquation', () => {
+    it('evaluates simple addition: 3 + 4 = 7', () => {
+      const equation = createSimpleEquation(3, '+', 4, 7);
+      expect(evaluateEquation(equation)).toBe(7);
+    });
+
+    it('evaluates simple subtraction: 5 - 3 = 2', () => {
+      const equation = createSimpleEquation(5, '-', 3, 2);
+      expect(evaluateEquation(equation)).toBe(2);
+    });
+
+    it('evaluates chained operations: 3 + 4 - 2 = 5', () => {
+      const equation = createChainedEquation(3, '+', 4, '-', 2, 5);
+      expect(evaluateEquation(equation)).toBe(5);
+    });
+
+    it('evaluates left-to-right: 2 + 3 × 4 = 20 (not 14)', () => {
+      const equation = createChainedEquation(2, '+', 3, '×', 4, 20);
+      expect(evaluateEquation(equation)).toBe(20);
+    });
+
+    it('returns null for incomplete equation', () => {
+      const equation = createSimpleEquation(3, '+', null, 7);
+      expect(evaluateEquation(equation)).toBeNull();
+    });
+
+    it('returns null when intermediate result is negative', () => {
+      // 2 - 5 would be -3, which is not allowed
+      // Use a valid result cell value, but the equation should still return null
+      const equation = createChainedEquation(2, '-', 5, '+', 1, 0);
+      expect(evaluateEquation(equation)).toBeNull();
+    });
+  });
+
+  describe('getExpectedResult', () => {
+    it('extracts result from equation', () => {
+      const equation = createSimpleEquation(3, '+', 4, 7);
+      expect(getExpectedResult(equation)).toBe(7);
+    });
+  });
+
+  describe('validateEquation', () => {
+    it('returns valid for correct equation', () => {
+      const equation = createSimpleEquation(3, '+', 4, 7);
+      const validation = validateEquation(equation);
+      
+      expect(validation.isValid).toBe(true);
+      expect(validation.calculatedResult).toBe(7);
+      expect(validation.expectedResult).toBe(7);
+    });
+
+    it('returns invalid for incorrect equation', () => {
+      const equation = createSimpleEquation(3, '+', 4, 10); // Wrong result
+      const validation = validateEquation(equation);
+      
+      expect(validation.isValid).toBe(false);
+      expect(validation.calculatedResult).toBe(7);
+      expect(validation.expectedResult).toBe(10);
+    });
+
+    it('returns incomplete status for equation with nulls', () => {
+      const equation = createSimpleEquation(3, '+', null, 7);
+      const validation = validateEquation(equation);
+      
+      expect(validation.isComplete).toBe(false);
+    });
+  });
+
+  describe('isEquationComplete', () => {
+    it('returns true when all number cells have values', () => {
+      const equation = createSimpleEquation(3, '+', 4, 7);
+      expect(isEquationComplete(equation)).toBe(true);
+    });
+
+    it('returns false when a number cell is null', () => {
+      const equation = createSimpleEquation(3, '+', null, 7);
+      expect(isEquationComplete(equation)).toBe(false);
+    });
+  });
+
+  describe('parseOperator', () => {
+    it('parses standard operators', () => {
+      expect(parseOperator('+')).toBe('+');
+      expect(parseOperator('-')).toBe('-');
+      expect(parseOperator('×')).toBe('×');
+      expect(parseOperator('÷')).toBe('÷');
+    });
+
+    it('parses alternate representations', () => {
+      expect(parseOperator('*')).toBe('×');
+      expect(parseOperator('x')).toBe('×');
+      expect(parseOperator('/')).toBe('÷');
+    });
+
+    it('returns null for invalid operators', () => {
+      expect(parseOperator('?')).toBeNull();
+      expect(parseOperator('')).toBeNull();
+    });
+  });
+});
