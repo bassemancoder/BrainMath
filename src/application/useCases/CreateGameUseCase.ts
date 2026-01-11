@@ -5,8 +5,10 @@
 
 import type { Puzzle, GridSize, Difficulty } from '@domain/types';
 import { parseHash, isValidHash, generateHash as generateHashEntity } from '@domain/entities/GameHash';
-import { generatePuzzle } from '@domain/services/GeneratorService';
+import { generatePuzzle, generatePuzzleAsync, type GenerationProgress, type ProgressCallback } from '@domain/services/GeneratorService';
 import type { RandomPort } from '../ports/RandomPort';
+
+export type { GenerationProgress, ProgressCallback };
 
 export interface CreateGameInput {
   hash?: string;
@@ -26,10 +28,10 @@ export interface CreateGameOutput {
  * - If size and difficulty are provided, generates a new hash
  * - Returns the puzzle with its solution
  */
-export function createGame(
+export async function createGame(
   input: CreateGameInput,
   randomPort: RandomPort
-): CreateGameOutput {
+): Promise<CreateGameOutput> {
   try {
     let hash: string;
     
@@ -60,7 +62,67 @@ export function createGame(
     const rng = randomPort.createSeededGenerator(parsed.seed);
     
     // Generate puzzle
-    const puzzle = generatePuzzle(hash, rng);
+    const puzzle = await generatePuzzle(hash, rng);
+    
+    if (!puzzle) {
+      return {
+        success: false,
+        error: 'Failed to generate puzzle. Try a different hash.',
+      };
+    }
+    
+    return {
+      success: true,
+      puzzle,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Creates a new game asynchronously with progress reporting
+ * Non-blocking version that yields to browser periodically
+ */
+export async function createGameAsync(
+  input: CreateGameInput,
+  randomPort: RandomPort,
+  onProgress?: ProgressCallback
+): Promise<CreateGameOutput> {
+  try {
+    let hash: string;
+    
+    if (input.hash) {
+      // Validate provided hash
+      if (!isValidHash(input.hash)) {
+        return {
+          success: false,
+          error: `Invalid hash format: ${input.hash}`,
+        };
+      }
+      hash = input.hash.toUpperCase();
+    } else if (input.size && input.difficulty) {
+      // Generate new hash
+      const rng = randomPort.createRandomGenerator();
+      hash = generateHashEntity(input.size, input.difficulty, rng.random);
+    } else {
+      return {
+        success: false,
+        error: 'Either hash or size+difficulty must be provided',
+      };
+    }
+    
+    // Parse hash to get seed
+    const parsed = parseHash(hash);
+    
+    // Create seeded RNG from the hash seed
+    const rng = randomPort.createSeededGenerator(parsed.seed);
+    
+    // Generate puzzle asynchronously with progress
+    const puzzle = await generatePuzzleAsync(hash, rng, onProgress);
     
     if (!puzzle) {
       return {

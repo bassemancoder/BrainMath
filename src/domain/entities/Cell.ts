@@ -4,6 +4,7 @@
  */
 
 import type { NumberCell, OperatorCell, EqualsCell, ResultCell, EmptyCell, Operator, Cell } from '@domain/types';
+import { Cell as CellConstants } from '@domain/constants';
 
 /**
  * Creates a number cell (positive integers only)
@@ -16,8 +17,8 @@ export function createNumberCell(
   isFixed: boolean = false
 ): NumberCell {
   // Validate value is positive or null
-  if (value !== null && (value < 1 || value > 200)) {
-    throw new Error('Number cell value must be between 1 and 200');
+  if (value !== null && (value < CellConstants.MIN_VALUE || value > CellConstants.MAX_VALUE)) {
+    throw new Error(`Number cell value must be between ${CellConstants.MIN_VALUE} and ${CellConstants.MAX_VALUE}`);
   }
   return {
     type: 'number',

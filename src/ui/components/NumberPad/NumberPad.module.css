@@ -1,14 +1,27 @@
 .numberPad {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0.75rem 1rem;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
   justify-content: center;
-  padding: 1rem;
 }
 
 .grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  max-width: 400px;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
   justify-content: center;
 }
 
@@ -17,15 +30,15 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  min-width: 48px;
-  padding: 0 12px;
-  height: 48px;
-  font-size: 1.25rem;
+  min-width: 44px;
+  padding: 0 10px;
+  height: 44px;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: #495057;
-  background: #ffffff;
-  border: 2px solid #dee2e6;
-  border-radius: 12px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.15s ease;
   user-select: none;
@@ -36,6 +49,12 @@
   background: #e7f5ff;
   border-color: #339af0;
   color: #1971c2;
+}
+
+[data-theme="dark"] .numberButton:hover:not(:disabled) {
+  background: #1e3a5f;
+  border-color: #4dabf7;
+  color: #74c0fc;
 }
 
 .numberButton:active:not(:disabled) {
@@ -56,16 +75,150 @@
   color: #c92a2a;
 }
 
+[data-theme="dark"] .clearButton {
+  background: #5c2828;
+  border-color: #f87171;
+  color: #fecaca;
+}
+
 .clearButton:hover:not(:disabled) {
   background: #ffe3e3;
   border-color: #fa5252;
   color: #c92a2a;
 }
 
+[data-theme="dark"] .clearButton:hover:not(:disabled) {
+  background: #7f2d2d;
+  border-color: #f87171;
+  color: #fecaca;
+}
+
 .clearButton:active:not(:disabled) {
   background: #fa5252;
   border-color: #e03131;
   color: #ffffff;
+}
+
+.undoButton {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.undoButton:hover:not(:disabled) {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-border-dark);
+  color: var(--color-text);
+}
+
+.undoButton:active:not(:disabled) {
+  background: var(--color-border-dark);
+  border-color: var(--color-text-secondary);
+  color: var(--color-text);
+}
+
+/* Swap button */
+.swapButton {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border);
+  color: var(--color-text);
+  font-size: 1.2rem;
+}
+
+.swapButton:hover:not(:disabled) {
+  background: #e7f5ff;
+  border-color: #339af0;
+  color: #1971c2;
+}
+
+[data-theme="dark"] .swapButton:hover:not(:disabled) {
+  background: #1e3a5f;
+  border-color: #4dabf7;
+  color: #74c0fc;
+}
+
+/* Swap mode active (waiting for first or second cell) */
+.swapButton.swapActive {
+  background: #d0ebff;
+  border-color: #339af0;
+  color: #1971c2;
+}
+
+[data-theme="dark"] .swapButton.swapActive {
+  background: #1e3a5f;
+  border-color: #4dabf7;
+  color: #74c0fc;
+}
+
+/* First cell selected, waiting for second */
+.swapButton.swapPending {
+  background: #339af0;
+  border-color: #1971c2;
+  color: #ffffff;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Hint button - teal/green theme */
+.hintButton {
+  background: #d3f9d8;
+  border-color: #40c057;
+  color: var(--color-text);
+}
+
+[data-theme="dark"] .hintButton {
+  background: #2b4c2f;
+  border-color: #40c057;
+}
+
+.hintButton:hover:not(:disabled) {
+  background: #b2f2bb;
+  border-color: #37b24d;
+}
+
+[data-theme="dark"] .hintButton:hover:not(:disabled) {
+  background: #3a6b40;
+  border-color: #37b24d;
+}
+
+.hintButton:active:not(:disabled) {
+  background: #8ce99a;
+  border-color: #2f9e44;
+}
+
+.hintButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.solveButton {
+  background: #fff3bf;
+  border-color: #ffd43b;
+  color: var(--color-text);
+}
+
+[data-theme="dark"] .solveButton {
+  background: #5c4d1f;
+  border-color: #ffd43b;
+}
+
+.solveButton:hover:not(:disabled) {
+  background: #ffe066;
+  border-color: #fab005;
+}
+
+[data-theme="dark"] .solveButton:hover:not(:disabled) {
+  background: #7a662a;
+  border-color: #fab005;
+}
+
+.solveButton:active:not(:disabled) {
+  background: #ffd43b;
+  border-color: #f59f00;
 }
 
 /* Badge for showing count of duplicate numbers */
@@ -86,20 +239,76 @@
   justify-content: center;
 }
 
+/* Used (placed) numbers - clickable for highlighting */
+.usedButton {
+  opacity: 0.6;
+  cursor: pointer;
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-border);
+  border-style: dashed;
+  color: var(--color-text-secondary);
+}
+
+.usedButton:hover {
+  opacity: 0.8;
+  background: #fff9db;
+  border-color: #fab005;
+  color: var(--color-text);
+}
+
+[data-theme="dark"] .usedButton:hover {
+  background: #5c4d1f;
+  border-color: #fab005;
+}
+
+/* Used button when its number is highlighted in the puzzle */
+.usedHighlighted {
+  opacity: 1;
+  background: #fff3bf;
+  border-color: #fab005;
+  border-style: solid;
+  color: var(--color-text);
+  box-shadow: 0 0 0 2px rgba(250, 176, 5, 0.3);
+}
+
+[data-theme="dark"] .usedHighlighted {
+  background: #5c4d1f;
+  border-color: #ffd43b;
+  box-shadow: 0 0 0 2px rgba(255, 212, 59, 0.3);
+}
+
+.usedBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: #868e96;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Mobile optimization */
 @media (max-width: 480px) {
   .numberPad {
-    padding: 0.75rem;
+    padding: 0.5rem;
   }
 
   .grid {
-    gap: 6px;
+    gap: 5px;
   }
 
   .numberButton {
-    width: 48px;
-    height: 48px;
-    font-size: 1.25rem;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 8px;
+    font-size: 1rem;
   }
 }
 
@@ -109,9 +318,10 @@
   }
 
   .numberButton {
-    width: 44px;
-    height: 44px;
-    font-size: 1.1rem;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 6px;
+    font-size: 0.95rem;
     border-radius: 8px;
   }
 }

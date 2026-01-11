@@ -1,16 +1,84 @@
 .boardContainer {
+  flex: 1;
+  width: 100%;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 1rem;
+  min-height: 0;
 }
 
 .board {
   display: grid;
   gap: 4px;
   padding: 1rem;
-  background: #f8f9fa;
+  background: var(--color-bg-secondary);
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
+  width: max-content;
+  margin: auto;
+  flex-shrink: 0;
+}
+
+/* Index indicators */
+.columnIndex,
+.rowIndex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  user-select: none;
+}
+
+.columnIndex {
+  height: 20px;
+  min-width: 44px;
+}
+
+.rowIndex {
+  width: 24px;
+  min-height: 44px;
+}
+
+.indexCorner {
+  width: 24px;
+  height: 20px;
+}
+
+/* Header toggle button in corner - styled like undo button */
+.headerToggle {
+  display: flex;
+  width: 24px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.5rem;
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.headerToggle:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-border-dark);
+  color: var(--color-text);
+}
+
+.headerToggle:active {
+  background: var(--color-border-dark);
+  border-color: var(--color-text-secondary);
+  color: var(--color-text);
+  transform: scale(0.95);
 }
 
 .empty {
@@ -25,8 +93,11 @@
   width: 44px;
   height: 44px;
   font-size: 1.5rem;
-  font-weight: 700;
-  color: #495057;
+  font-weight: 600;
+  color: var(--color-text);
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
 }
 
 /* Mobile optimization */
@@ -45,6 +116,27 @@
     width: 40px;
     height: 40px;
   }
+
+  .columnIndex {
+    min-width: 40px;
+    font-size: 0.6rem;
+  }
+
+  .rowIndex {
+    min-height: 40px;
+    width: 20px;
+    font-size: 0.6rem;
+  }
+
+  .indexCorner {
+    width: 20px;
+  }
+
+  /* Resize toggle button on mobile */
+  .headerToggle {
+    width: 20px;
+    height: 20px;
+  }
 }
 
 @media (max-width: 360px) {
@@ -55,8 +147,31 @@
 
   .empty,
   .equalsSign {
-    width: 36px;
-    height: 36px;
-    font-size: 1.25rem;
+    width: 32px;
+    height: 32px;
+    font-size: 1.1rem;
+  }
+
+  .columnIndex {
+    min-width: 32px;
+    height: 16px;
+    font-size: 0.5rem;
+  }
+
+  .rowIndex {
+    min-height: 32px;
+    width: 16px;
+    font-size: 0.5rem;
+  }
+
+  .indexCorner {
+    width: 16px;
+    height: 16px;
+  }
+
+  .headerToggle {
+    width: 16px;
+    height: 16px;
+    font-size: 0.4rem;
   }
 }

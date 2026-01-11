@@ -10,6 +10,7 @@
  */
 
 import type { Grid, GridSize, Equation, Cell, Operator, Difficulty, NumberCell, OperatorCell, ResultCell } from '@domain/types';
+import { Cell as CellConstants } from '@domain/constants';
 import { 
   createNumberCell, 
   createOperatorCell, 
@@ -107,8 +108,8 @@ export function setNumberValue(grid: Grid, row: number, col: number, value: numb
     return grid;
   }
   
-  if (value !== null && (value < 1 || value > 200)) {
-    throw new Error('Number value must be between 1 and 200');
+  if (value !== null && (value < CellConstants.MIN_VALUE || value > CellConstants.MAX_VALUE)) {
+    throw new Error(`Number value must be between ${CellConstants.MIN_VALUE} and ${CellConstants.MAX_VALUE}`);
   }
   
   const newCell: NumberCell = { ...cell, value };
@@ -454,6 +455,237 @@ export function placeVerticalEquation(
     resultCell,
     startRow,
     startCol,
+  };
+  
+  newGrid = setEquations(newGrid, [...newGrid.equations, equation]);
+  
+  return newGrid;
+}
+
+/**
+ * Checks if a vertical equation can be placed going UPWARD without conflicts
+ * The intersection point is at startRow, and the equation extends upward
+ */
+export function canPlaceVerticalEquationUp(
+  grid: Grid,
+  startRow: number,
+  startCol: number,
+  numNumbers: number,
+  numOperators: number
+): boolean {
+  // Calculate total height: numbers + operators + equals + result
+  const totalHeight = numNumbers + numOperators + 2; // +2 for equals and result
+  const topRow = startRow - totalHeight + 1;
+  
+  if (topRow < 0) return false;
+  
+  let row = topRow;
+  
+  // Result cell at top
+  const resultExisting = getCellAt(grid, row, startCol);
+  if (resultExisting !== null) return false;
+  row++;
+  
+  // Equals cell
+  const equalsExisting = getCellAt(grid, row, startCol);
+  if (equalsExisting !== null) return false;
+  row++;
+  
+  // Numbers and operators going down (reversed order, ending at intersection)
+  for (let i = numNumbers - 1; i >= 0; i--) {
+    // Operator cell (before number, except for last/bottom number)
+    if (i < numNumbers - 1) {
+      const opExisting = getCellAt(grid, row, startCol);
+      if (opExisting !== null) return false;
+      row++;
+    }
+    
+    const existingCell = getCellAt(grid, row, startCol);
+    // Last cell (i === 0) is the intersection point - existing number is OK
+    if (i > 0 && existingCell !== null) return false;
+    row++;
+  }
+  
+  return true;
+}
+
+/**
+ * Places a vertical equation going UPWARD from the intersection point
+ * The result is at the top, numbers descend, intersection at bottom
+ */
+export function placeVerticalEquationUp(
+  grid: Grid,
+  equationId: number,
+  intersectionRow: number,
+  startCol: number,
+  numbers: number[], // In calculation order: first operand at index 0
+  operators: Operator[],
+  result: number
+): Grid {
+  let newGrid = grid;
+  
+  // Calculate positions - result at top, numbers descend
+  const totalHeight = numbers.length + operators.length + 2;
+  const topRow = intersectionRow - totalHeight + 1;
+  
+  const numberCells: NumberCell[] = [];
+  const operatorCells: OperatorCell[] = [];
+  
+  let row = topRow;
+  
+  // Result cell at top
+  const resultCell = createResultCell(row, startCol, result);
+  newGrid = setCellAt(newGrid, row, startCol, resultCell);
+  row++;
+  
+  // Equals cell
+  const equalsCell = createEqualsCell(row, startCol);
+  newGrid = setCellAt(newGrid, row, startCol, equalsCell);
+  row++;
+  
+  // Numbers and operators (reversed - last number first, going down to intersection)
+  for (let i = numbers.length - 1; i >= 0; i--) {
+    // Operator before number (except for last/bottom number which is at intersection)
+    if (i < numbers.length - 1) {
+      const opCell = createOperatorCell(row, startCol, operators[i]);
+      newGrid = setCellAt(newGrid, row, startCol, opCell);
+      operatorCells.unshift(opCell); // prepend to maintain order
+      row++;
+    }
+    
+    // Number cell
+    const existingCell = getCellAt(newGrid, row, startCol);
+    let numCell: NumberCell;
+    if (existingCell && isNumberCell(existingCell)) {
+      numCell = existingCell;
+    } else {
+      numCell = createNumberCell(row, startCol, numbers[i], true);
+      newGrid = setCellAt(newGrid, row, startCol, numCell);
+    }
+    numberCells.unshift(numCell); // prepend to maintain order
+    row++;
+  }
+  
+  const equation: Equation = {
+    id: equationId,
+    direction: 'vertical',
+    numberCells,
+    operatorCells,
+    resultCell,
+    startRow: topRow,
+    startCol,
+  };
+  
+  newGrid = setEquations(newGrid, [...newGrid.equations, equation]);
+  
+  return newGrid;
+}
+
+/**
+ * Checks if a horizontal equation can be placed going LEFT without conflicts
+ */
+export function canPlaceHorizontalEquationLeft(
+  grid: Grid,
+  startRow: number,
+  intersectionCol: number,
+  numNumbers: number,
+  numOperators: number
+): boolean {
+  const totalWidth = numNumbers + numOperators + 2; // +2 for equals and result
+  const leftCol = intersectionCol - totalWidth + 1;
+  
+  if (leftCol < 0) return false;
+  
+  let col = leftCol;
+  
+  // Result cell at left
+  const resultExisting = getCellAt(grid, startRow, col);
+  if (resultExisting !== null) return false;
+  col++;
+  
+  // Equals cell
+  const equalsExisting = getCellAt(grid, startRow, col);
+  if (equalsExisting !== null) return false;
+  col++;
+  
+  // Numbers and operators going right (reversed order, ending at intersection)
+  for (let i = numNumbers - 1; i >= 0; i--) {
+    if (i < numNumbers - 1) {
+      const opExisting = getCellAt(grid, startRow, col);
+      if (opExisting !== null) return false;
+      col++;
+    }
+    
+    const existingCell = getCellAt(grid, startRow, col);
+    if (i > 0 && existingCell !== null) return false;
+    col++;
+  }
+  
+  return true;
+}
+
+/**
+ * Places a horizontal equation going LEFT from the intersection point
+ * Result at left, numbers go right, intersection at rightmost number
+ */
+export function placeHorizontalEquationLeft(
+  grid: Grid,
+  equationId: number,
+  startRow: number,
+  intersectionCol: number,
+  numbers: number[],
+  operators: Operator[],
+  result: number
+): Grid {
+  let newGrid = grid;
+  
+  const totalWidth = numbers.length + operators.length + 2;
+  const leftCol = intersectionCol - totalWidth + 1;
+  
+  const numberCells: NumberCell[] = [];
+  const operatorCells: OperatorCell[] = [];
+  
+  let col = leftCol;
+  
+  // Result cell at left
+  const resultCell = createResultCell(startRow, col, result);
+  newGrid = setCellAt(newGrid, startRow, col, resultCell);
+  col++;
+  
+  // Equals cell
+  const equalsCell = createEqualsCell(startRow, col);
+  newGrid = setCellAt(newGrid, startRow, col, equalsCell);
+  col++;
+  
+  // Numbers and operators (reversed - last number first, going right to intersection)
+  for (let i = numbers.length - 1; i >= 0; i--) {
+    if (i < numbers.length - 1) {
+      const opCell = createOperatorCell(startRow, col, operators[i]);
+      newGrid = setCellAt(newGrid, startRow, col, opCell);
+      operatorCells.unshift(opCell);
+      col++;
+    }
+    
+    const existingCell = getCellAt(newGrid, startRow, col);
+    let numCell: NumberCell;
+    if (existingCell && isNumberCell(existingCell)) {
+      numCell = existingCell;
+    } else {
+      numCell = createNumberCell(startRow, col, numbers[i], true);
+      newGrid = setCellAt(newGrid, startRow, col, numCell);
+    }
+    numberCells.unshift(numCell);
+    col++;
+  }
+  
+  const equation: Equation = {
+    id: equationId,
+    direction: 'horizontal',
+    numberCells,
+    operatorCells,
+    resultCell,
+    startRow,
+    startCol: leftCol,
   };
   
   newGrid = setEquations(newGrid, [...newGrid.equations, equation]);

@@ -19,6 +19,8 @@
   --color-bg: #ffffff;
   --color-bg-secondary: #f3f4f6;
   --color-bg-tertiary: #e5e7eb;
+  --color-bg-gradient-start: #e7f5ff;
+  --color-bg-gradient-end: #ffffff;
   
   /* Text colors */
   --color-text: #1f2937;
@@ -65,22 +67,83 @@
   --transition-normal: 250ms ease;
 }
 
+/* Dark theme */
+[data-theme="dark"] {
+  /* Colors */
+  --color-primary: #6366f1;
+  --color-primary-hover: #818cf8;
+  --color-success: #4ade80;
+  --color-error: #f87171;
+  --color-warning: #fbbf24;
+  
+  /* Background colors */
+  --color-bg: #1a1b26;
+  --color-bg-secondary: #24283b;
+  --color-bg-tertiary: #343a4f;
+  --color-bg-gradient-start: #1a1b26;
+  --color-bg-gradient-end: #24283b;
+  
+  /* Text colors */
+  --color-text: #c0caf5;
+  --color-text-secondary: #9aa5ce;
+  --color-text-light: #565f89;
+  
+  /* Cell colors */
+  --color-cell-number: #1e3a5f;
+  --color-cell-operator: #3b2d5c;
+  --color-cell-result: #4a3c28;
+  --color-cell-selected: #2d4a7c;
+  --color-cell-error: #5c2828;
+  --color-cell-fixed: #343a4f;
+  
+  /* Borders */
+  --color-border: #3b4261;
+  --color-border-dark: #565f89;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+}
+
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /* Prevent any scrolling at html level */
+  overflow: hidden;
+  overscroll-behavior: none;
+  /* Prevent bouncing/scrolling on iOS/Android */
+  position: fixed;
+  width: 100%;
+  height: 100%;
 }
 
 body {
   min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height - accounts for mobile browser UI */
+  height: 100%;
+  width: 100%;
   background-color: var(--color-bg);
   color: var(--color-text);
+  /* Prevent any scrolling at body level */
+  overflow: hidden;
+  overscroll-behavior: none;
+  /* Prevent bouncing/scrolling on iOS/Android */
+  position: fixed;
+  touch-action: none;
 }
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
+  height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  /* Allow touch interactions inside the app */
+  touch-action: manipulation;
 }
 
 /* Utility classes */
@@ -100,29 +163,6 @@ button:disabled {
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #1f2937;
-    --color-bg-secondary: #374151;
-    --color-bg-tertiary: #4b5563;
-    
-    --color-text: #f9fafb;
-    --color-text-secondary: #d1d5db;
-    --color-text-light: #9ca3af;
-    
-    --color-cell-number: #1e3a5f;
-    --color-cell-operator: #3b2d5c;
-    --color-cell-result: #4a3c28;
-    --color-cell-selected: #1e40af;
-    --color-cell-error: #7f1d1d;
-    --color-cell-fixed: #374151;
-    
-    --color-border: #4b5563;
-    --color-border-dark: #6b7280;
-  }
 }
 
 /* Touch device optimizations */

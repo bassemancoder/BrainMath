@@ -3,7 +3,7 @@
  * Pure functions with no side effects
  */
 
-import type { Operator, Cell, Equation, EquationValidation, NumberCell } from '@domain/types';
+import type { Operator, Cell, Equation, EquationValidation } from '@domain/types';
 import { isNumberCell, isOperatorCell } from '@domain/entities/Cell';
 
 // Re-export getOperatorsForDifficulty from centralized settings
@@ -12,7 +12,8 @@ export { getOperatorsForDifficulty } from './DifficultySettings';
 /**
  * Applies an operator to two numbers
  * Returns null if the operation is invalid (e.g., division by zero, non-integer result, negative result)
- * No negative results are allowed in this game
+ * No negative results are allowed in this game for FINAL results.
+ * Intermediate results can be negative.
  */
 export function applyOperator(left: number, operator: Operator, right: number): number | null {
   let result: number;
@@ -23,17 +24,16 @@ export function applyOperator(left: number, operator: Operator, right: number): 
       break;
     case '-':
       result = left - right;
-      // Reject negative results
-      if (result < 0) return null;
+      // Allow negative intermediate results - final result check happens elsewhere
       break;
     case '×':
       result = left * right;
       break;
     case '÷':
-      // Only allow division if result is a positive integer
+      // Only allow division if result is an integer (can be negative for intermediate)
       if (right === 0) return null;
       result = left / right;
-      if (!Number.isInteger(result) || result < 0) return null;
+      if (!Number.isInteger(result)) return null;
       break;
     default:
       return null;
@@ -74,6 +74,9 @@ export function evaluateEquation(equation: Equation): number | null {
     result = newResult;
   }
   
+  // Final result must be non-negative (intermediate results can be negative)
+  if (result < 0) return null;
+  
   return result;
 }
 
@@ -109,30 +112,42 @@ export function evaluateEquationFromCells(cells: Cell[]): number | null {
     result = newResult;
   }
   
+  // Final result must be non-negative (intermediate results can be negative)
+  if (result < 0) return null;
+  
   return result;
 }
 
 /**
- * Gets the expected result from an equation
+ * Gets the expected result from an equation (the original puzzle solution).
+ * Used by the solver for puzzle generation and validation.
+ * NOT used for gameplay validation - use validateEquation instead.
  */
 export function getExpectedResult(equation: Equation): number {
   return equation.resultCell.value;
 }
 
 /**
- * Validates a single equation
+ * Validates a single equation by checking if the math is correct.
+ * 
+ * @param equation - The equation to validate
+ * @param displayedResult - The result value currently displayed in the grid.
+ *                          This is what the user sees, which may differ from the
+ *                          original puzzle solution if it's a shared cell.
+ * 
+ * We only check if: calculated result === displayed result
+ * This prevents revealing the expected solution and allows alternative valid solutions.
  */
-export function validateEquation(equation: Equation): EquationValidation {
+export function validateEquation(equation: Equation, displayedResult: number): EquationValidation {
   const calculatedResult = evaluateEquation(equation);
-  const expectedResult = getExpectedResult(equation);
   const isComplete = isEquationComplete(equation);
   
   return {
     equationId: equation.id,
-    isValid: calculatedResult !== null && calculatedResult === expectedResult,
+    isValid: calculatedResult !== null && calculatedResult === displayedResult,
     isComplete,
     calculatedResult,
-    expectedResult,
+    expectedResult: displayedResult,
   };
 }
 

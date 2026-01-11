@@ -9,6 +9,20 @@ import { isNumberCell } from '@domain/entities/Cell';
 import { cloneGrid } from '@domain/entities/Grid';
 import { getAllEquations, setNumberValue, getEditableNumberCells } from './GridService';
 import { evaluateEquation, getExpectedResult, isEquationComplete } from './EquationService';
+import { Solver } from '@domain/constants';
+import { debug } from '@utils/debug';
+
+// ============================================
+// ASYNC HELPERS
+// ============================================
+
+/** Yield control to browser to prevent UI blocking */
+function yieldToBrowser(): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, 0));
+}
+
+/** How often to yield during solving (every N iterations) */
+const YIELD_EVERY_N_ITERATIONS = 50;
 
 // ============================================
 // CELL FINDING
@@ -105,7 +119,7 @@ export function getPossibleValues(
   grid: Grid,
   row: number,
   col: number,
-  maxValue: number = 200
+  maxValue: number = Solver.DEFAULT_MAX_VALUE
 ): number[] {
   const possible: number[] = [];
   
@@ -126,7 +140,7 @@ export function getPossibleValues(
  * Solves the puzzle using backtracking
  * Returns the solved grid or null if no solution exists
  */
-export function solvePuzzle(grid: Grid, maxValue: number = 200): Grid | null {
+export function solvePuzzle(grid: Grid, maxValue: number = Solver.DEFAULT_MAX_VALUE): Grid | null {
   const emptyCell = findFirstEmptyCell(grid);
   
   // No empty cells = puzzle is complete
@@ -157,17 +171,25 @@ export function solvePuzzle(grid: Grid, maxValue: number = 200): Grid | null {
 }
 
 /**
- * Counts the number of solutions for a puzzle (up to maxCount)
- * This is used to verify a puzzle has exactly one solution
+ * Counts the number of solutions for a puzzle (up to maxCount) - async version
+ * Yields to browser periodically to prevent UI blocking on mobile devices
  */
-export function countSolutions(
+export async function countSolutionsAsync(
   grid: Grid,
-  maxCount: number = 2,
-  maxValue: number = 200
-): number {
+  maxCount: number = Solver.DEFAULT_MAX_COUNT,
+  maxValue: number = Solver.DEFAULT_MAX_VALUE
+): Promise<number> {
   let count = 0;
+  let iterations = 0;
   
-  function solve(currentGrid: Grid): boolean {
+  async function solve(currentGrid: Grid): Promise<boolean> {
+    iterations++;
+    
+    // Yield to browser periodically
+    if (iterations % YIELD_EVERY_N_ITERATIONS === 0) {
+      await yieldToBrowser();
+    }
+    
     const emptyCell = findFirstEmptyCell(currentGrid);
     
     if (!emptyCell) {
@@ -184,7 +206,7 @@ export function countSolutions(
     for (let value = 1; value <= maxValue; value++) {
       if (isPlacementValid(currentGrid, row, col, value)) {
         const newGrid = setNumberValue(currentGrid, row, col, value);
-        if (solve(newGrid)) {
+        if (await solve(newGrid)) {
           return true; // Stop early if we've found enough solutions
         }
       }
@@ -193,15 +215,17 @@ export function countSolutions(
     return false;
   }
   
-  solve(grid);
+  await solve(grid);
   return count;
 }
 
 /**
- * Checks if a puzzle has exactly one solution
+ * Checks if a puzzle has exactly one solution (async)
+ * Yields to browser periodically to prevent UI blocking on mobile devices
  */
-export function hasUniqueSolution(grid: Grid, maxValue: number = 200): boolean {
-  return countSolutions(grid, 2, maxValue) === 1;
+export async function hasUniqueSolutionAsync(grid: Grid, maxValue: number = Solver.DEFAULT_MAX_VALUE): Promise<boolean> {
+  const solutions = await countSolutionsAsync(grid, Solver.DEFAULT_MAX_COUNT, maxValue);
+  return solutions === 1;
 }
 
 // ============================================
@@ -221,12 +245,12 @@ export function isGridComplete(grid: Grid): boolean {
  */
 export function isValidSolution(grid: Grid): boolean {
   if (!isGridComplete(grid)) {
-    console.log('Grid is not complete');
+    debug.log('Grid is not complete');
     return false;
   }
   
   const equations = getAllEquations(grid);
-  console.log('Checking', equations.length, 'equations');
+  debug.log('Checking', equations.length, 'equations');
   
   for (const equation of equations) {
     // Get updated equation with current grid values
@@ -235,14 +259,14 @@ export function isValidSolution(grid: Grid): boolean {
     const result = evaluateEquation(updatedEquation);
     const expected = getExpectedResult(updatedEquation);
     
-    console.log(`Eq ${equation.id} (${equation.direction}):`, 
+    debug.log(`Eq ${equation.id} (${equation.direction}):`, 
       'cells:', updatedEquation.numberCells.map(c => `(${c.row},${c.col})=${c.value}`).join(', '),
       'ops:', updatedEquation.operatorCells.map(c => c.value).join(', '),
       'result:', expected,
       'evaluated:', result);
     
     if (result !== expected) {
-      console.log('INVALID: result', result, '!= expected', expected);
+      debug.log('INVALID: result', result, '!= expected', expected);
       return false;
     }
   }

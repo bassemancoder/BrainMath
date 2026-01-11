@@ -1,33 +1,39 @@
 /**
- * Timer Component - Displays elapsed time
+ * Timer Component - Displays elapsed time and selected cell coordinates
  */
 
 import React from 'react';
+import { TimeFormat } from '@domain/constants';
 import styles from './Timer.module.css';
 
 interface TimerProps {
   time: number; // seconds
   isRunning: boolean;
-  bestTime: number | null;
+  selectedCellCoords?: string | null; // e.g., "H5, V3"
+  score: number; // current calculated score
 }
 
 function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  const mins = Math.floor(seconds / TimeFormat.SECONDS_PER_MINUTE);
+  const secs = seconds % TimeFormat.SECONDS_PER_MINUTE;
+  return `${mins.toString().padStart(TimeFormat.PAD_LENGTH, TimeFormat.PAD_CHAR)}:${secs.toString().padStart(TimeFormat.PAD_LENGTH, TimeFormat.PAD_CHAR)}`;
 }
 
-export const Timer: React.FC<TimerProps> = ({ time, isRunning, bestTime }) => {
+export const Timer: React.FC<TimerProps> = ({ time, isRunning, selectedCellCoords, score }) => {
   return (
     <div className={styles.timerContainer}>
       <div className={`${styles.timer} ${isRunning ? styles.running : ''}`}>
         <span className={styles.icon}>⏱️</span>
         <span className={styles.time}>{formatTime(time)}</span>
       </div>
-      {bestTime !== null && (
-        <div className={styles.bestTime}>
-          <span className={styles.bestIcon}>🏆</span>
-          <span className={styles.bestLabel}>Best: {formatTime(bestTime)}</span>
+      <div className={styles.score}>
+        <span className={styles.scoreIcon}>⭐</span>
+        <span className={styles.scoreValue}>{score.toLocaleString()}</span>
+      </div>
+      {selectedCellCoords && (
+        <div className={styles.cellCoords}>
+          <span className={styles.coordsIcon}>📍</span>
+          <span className={styles.coordsLabel}>{selectedCellCoords}</span>
         </div>
       )}
     </div>

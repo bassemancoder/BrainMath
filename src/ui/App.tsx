@@ -2,22 +2,39 @@
  * App Component - Main game container
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useGame } from './context/GameContext';
-import { Board, NumberPad, Timer, HashDisplay, GameOver, Settings } from './components';
-import { localStorageAdapter } from '@infrastructure/storage/LocalStorageAdapter';
+import { Board, NumberPad, Timer, HashDisplay, GameOver, Settings, Help } from './components';
+import { calculateScore } from '@domain/services';
+import { useTheme } from './hooks/useTheme';
 import styles from './App.module.css';
+import logo from '../assets/logo.png';
 
 export const App: React.FC = () => {
   const { state, actions } = useGame();
-  const [showWinDialog, setShowWinDialog] = useState(true);
+  const { theme, toggleTheme } = useTheme();
+  
+  // Track if win dialog has been dismissed for current game
+  const [winDialogDismissedForHash, setWinDialogDismissedForHash] = useState<string | null>(null);
+  
+  // Track if help dialog is open
+  const [showHelp, setShowHelp] = useState(false);
+  
+  // Track if header is collapsed on mobile
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  
+  // Show win dialog if won and not dismissed for this specific puzzle
+  const showWinDialog = state.status === 'won' && winDialogDismissedForHash !== state.puzzle?.hash;
 
-  // Reset showWinDialog when game status changes to 'won'
-  useEffect(() => {
-    if (state.status === 'won') {
-      setShowWinDialog(true);
-    }
-  }, [state.status]);
+  // Calculate score from state
+  const score = useMemo(() => {
+    return calculateScore(
+      state.initialScore,
+      state.timer,
+      state.wrongAttemptCount,
+      state.hintCount
+    );
+  }, [state.initialScore, state.timer, state.wrongAttemptCount, state.hintCount]);
 
   const handleShare = async () => {
     const url = actions.getShareableUrl();
@@ -34,6 +51,20 @@ export const App: React.FC = () => {
     }
   };
 
+  // Show generating overlay when generating a new puzzle
+  if (state.isGenerating) {
+    return (
+      <div className={styles.app}>
+        <div className={styles.generatingOverlay}>
+          <div className={styles.generatingContent}>
+            <img src={logo} alt="Brain Math" className={styles.heartbeat} />
+            <p className={styles.generatingMessage}>Generating puzzle...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Show settings modal on idle or when explicitly opened
   if (state.status === 'idle' || state.showSettings) {
     return (
@@ -46,11 +77,10 @@ export const App: React.FC = () => {
             actions.startGame(hash);
           }}
           onClose={() => {
-            if (state.status !== 'idle') {
-              actions.hideSettings();
-            }
+            actions.hideSettings();
           }}
           onUpdateSettings={actions.updateSettings}
+          showClose={state.status !== 'idle'}
         />
       </div>
     );
@@ -58,14 +88,82 @@ export const App: React.FC = () => {
 
   // Show game over modal when won
   if (state.status === 'won' && state.puzzle) {
-    const bestTime = localStorageAdapter.getBestTime(state.puzzle.hash)?.time ?? null;
-    
     return (
       <div className={styles.app}>
+        {/* Show game board with header */}
+        <div className={`${styles.mainContent} ${showWinDialog ? styles.gameBlurred : ''}`}>
+          <header className={styles.header}>
+            <div className={styles.titleGroup}>
+              <img src={logo} alt="Brain Math" className={styles.logo} />
+              <h1 className={styles.title}>Brain Math</h1>
+            </div>
+            <div className={styles.headerButtons}>
+              {!showWinDialog && (
+                <button
+                  className={styles.showScoreButton}
+                  onClick={() => setWinDialogDismissedForHash(null)}
+                  type="button"
+                  aria-label="Show Score"
+                >
+                  🏆 Score
+                </button>
+              )}
+              <button
+                className={styles.helpButton}
+                onClick={() => setShowHelp(true)}
+                type="button"
+                aria-label="Help"
+              >
+                ❓
+              </button>
+              <button
+                className={styles.themeButton}
+                onClick={toggleTheme}
+                type="button"
+                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {theme === 'dark' ? '☀️' : '🌙'}
+              </button>
+              <button
+                className={styles.settingsButton}
+                onClick={actions.showSettings}
+                type="button"
+                aria-label="Settings"
+              >
+                ⚙️
+              </button>
+            </div>
+          </header>
+
+          <div className={styles.statusBar}>
+            <HashDisplay
+              hash={state.puzzle.hash}
+              onCopy={actions.copyHashToClipboard}
+              onShare={'share' in navigator ? handleShare : undefined}
+              onDebugDump={actions.debugDumpPuzzle}
+            />
+
+            <Timer
+              time={state.timer}
+              isRunning={false}
+              selectedCellCoords={null}
+              score={score}
+            />
+          </div>
+
+          <Board
+            grid={state.puzzle.grid}
+            selectedCell={null}
+            errors={[]}
+            onCellClick={() => {}}
+          />
+        </div>
+        
+        {/* GameOver modal - rendered AFTER game board so it's on top in DOM order */}
         {showWinDialog && (
           <GameOver
             time={state.timer}
-            bestTime={bestTime}
+            score={score}
             hash={state.puzzle.hash}
             onNewGame={() => {
               actions.resetGame();
@@ -74,68 +172,141 @@ export const App: React.FC = () => {
             onPlayAgain={() => {
               actions.startGame(state.puzzle?.hash);
             }}
-            onClose={() => setShowWinDialog(false)}
+            onClose={() => setWinDialogDismissedForHash(state.puzzle?.hash ?? null)}
             shareableUrl={actions.getShareableUrl()}
+            wrongAttemptCount={state.wrongAttemptCount}
+            hintCount={state.hintCount}
+            difficulty={state.settings.difficulty}
+            gridSize={state.settings.gridSize}
+            initialScore={state.initialScore}
           />
         )}
-        
-        {/* Show game board */}
-        <div className={showWinDialog ? styles.gameBlurred : undefined}>
-          <Board
-            grid={state.puzzle.grid}
-            selectedCell={null}
-            errors={[]}
-            onCellClick={() => {}}
-          />
-        </div>
       </div>
     );
   }
 
   // Main game view
   if (state.puzzle) {
-    const bestTime = localStorageAdapter.getBestTime(state.puzzle.hash)?.time ?? null;
+    // Calculate selected cell coordinates (H1, V1 format - relative to visible grid)
+    const getSelectedCellCoords = (): string | null => {
+      if (!state.selectedCell || !state.puzzle) return null;
+      
+      const grid = state.puzzle.grid;
+      
+      // Calculate grid bounds (same logic as Board component)
+      let minRow = grid.height;
+      let minCol = grid.width;
+      
+      for (let row = 0; row < grid.height; row++) {
+        for (let col = 0; col < grid.width; col++) {
+          if (grid.cells[row]?.[col] !== null) {
+            minRow = Math.min(minRow, row);
+            minCol = Math.min(minCol, col);
+          }
+        }
+      }
+      
+      // Calculate relative (1-based) coordinates
+      const relativeCol = state.selectedCell.col - minCol + 1;
+      const relativeRow = state.selectedCell.row - minRow + 1;
+      
+      return `H${relativeCol}, V${relativeRow}`;
+    };
 
+    const selectedCellCoords = getSelectedCellCoords();
     return (
       <div className={styles.app}>
+        {showHelp && <Help onClose={() => setShowHelp(false)} />}
         <div className={styles.mainContent}>
-          <header className={styles.header}>
-            <h1 className={styles.title}>🧠 Brain Math</h1>
-            <button
-              className={styles.settingsButton}
-              onClick={actions.showSettings}
-              type="button"
-              aria-label="Settings"
-            >
-              ⚙️
-            </button>
-          </header>
+          {!headerCollapsed && (
+            <>
+              <header className={styles.header}>
+                <div className={styles.titleGroup}>
+                  <img src={logo} alt="Brain Math" className={styles.logo} />
+                  <h1 className={styles.title}>Brain Math</h1>
+                </div>
+                <div className={styles.headerButtons}>
+                  <button
+                    className={styles.helpButton}
+                    onClick={() => setShowHelp(true)}
+                    type="button"
+                    aria-label="Help"
+                  >
+                    ❓
+                  </button>
+                  <button
+                    className={styles.themeButton}
+                    onClick={toggleTheme}
+                    type="button"
+                    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                  >
+                    {theme === 'dark' ? '☀️' : '🌙'}
+                  </button>
+                  <button
+                    className={styles.settingsButton}
+                    onClick={actions.showSettings}
+                    type="button"
+                    aria-label="Settings"
+                  >
+                    ⚙️
+                  </button>
+                </div>
+              </header>
 
-          <HashDisplay
-            hash={state.puzzle.hash}
-            onCopy={actions.copyHashToClipboard}
-            onShare={'share' in navigator ? handleShare : undefined}
-          />
+              <div className={styles.statusBar}>
+                <HashDisplay
+                  hash={state.puzzle.hash}
+                  onCopy={actions.copyHashToClipboard}
+                  onDebugDump={actions.debugDumpPuzzle}
+                />
 
-          <Timer
-            time={state.timer}
-            isRunning={state.isTimerRunning}
-            bestTime={bestTime}
-          />
+                <Timer
+                  time={state.timer}
+                  isRunning={state.isTimerRunning}
+                  selectedCellCoords={selectedCellCoords}
+                  score={score}
+                />
+              </div>
+            </>
+          )}
 
           <Board
             grid={state.puzzle.grid}
             selectedCell={state.selectedCell}
             errors={state.errors}
-            onCellClick={actions.selectCell}
+            highlightedNumber={state.highlightedNumber}
+            swapFirstCell={state.swapFirstCell}
+            hintedCell={state.hintedCell}
+            errorHintCell={state.errorHintCell}
+            justPlacedCell={state.justPlacedCell}
+            onCellClick={state.swapMode ? actions.handleSwapCellClick : actions.selectCell}
+            onCellDoubleClick={state.swapMode ? undefined : actions.clearCell}
+            onDeselect={state.swapMode ? () => actions.toggleSwapMode() : actions.deselectCell}
+            headerCollapsed={headerCollapsed}
+            onToggleHeader={() => setHeaderCollapsed(!headerCollapsed)}
           />
         </div>
 
         <div className={styles.numberPadContainer}>
           <NumberPad
             onNumberClick={actions.placeNumber}
-            disabled={!state.selectedCell}
+            onUndo={actions.undo}
+            onSolve={
+              (window.location.hostname === 'localhost')
+                ? actions.solvePuzzle
+                : undefined
+            }
+            onSwap={actions.toggleSwapMode}
+            onHint={actions.useHint}
+            disabled={!state.selectedCell && !state.swapMode}
+            canUndo={state.undoStack.length > 0}
+            swapMode={state.swapMode}
+            swapFirstCellSelected={state.swapFirstCell !== null}
+            hasEmptyCells={state.availableNumbers.length > 0}
             availableNumbers={state.availableNumbers}
+            usedNumbers={state.usedNumbers}
+            highlightedNumber={state.highlightedNumber}
+            onUsedNumberClick={actions.setHighlightedNumber}
           />
         </div>
       </div>

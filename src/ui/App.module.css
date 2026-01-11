@@ -1,62 +1,132 @@
 .app {
   height: 100vh;
+  height: 100dvh; /* Dynamic viewport height - accounts for mobile browser UI */
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #e7f5ff 0%, #ffffff 100%);
+  background: linear-gradient(180deg, var(--color-bg-gradient-start) 0%, var(--color-bg-gradient-end) 100%);
   overflow: hidden;
+  /* Prevent any scrolling/bouncing at app level */
+  overscroll-behavior: none;
+  position: relative;
+  /* Allow touch interactions within the app */
+  touch-action: manipulation;
 }
 
 .mainContent {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: auto;
+  min-width: 0;
+  min-height: 0;
+  /* Prevent pull-to-refresh when scrolling content */
+  overscroll-behavior: contain;
+  /* Allow scrolling only within this container */
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .numberPadContainer {
   flex-shrink: 0;
   position: sticky;
   bottom: 0;
-  background: linear-gradient(0deg, #ffffff 0%, rgba(255, 255, 255, 0.95) 100%);
-  border-top: 1px solid #dee2e6;
+  background: linear-gradient(0deg, var(--color-bg) 0%, rgba(255, 255, 255, 0.95) 100%);
+  border-top: 1px solid var(--color-border);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
   padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+[data-theme="dark"] .numberPadContainer {
+  background: linear-gradient(0deg, var(--color-bg) 0%, rgba(26, 27, 38, 0.95) 100%);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   padding: 1rem;
-  position: relative;
+  gap: 0.5rem;
 }
 
 .title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #212529;
+  color: var(--color-text);
   margin: 0;
+  white-space: nowrap;
+  line-height: 1;
 }
 
-.settingsButton {
-  position: absolute;
-  right: 1rem;
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  transform: translateY(2px);
+}
+
+.headerButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.statusBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+}
+
+.themeButton,
+.settingsButton,
+.helpButton {
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
-  border: 1px solid #dee2e6;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
   border-radius: 50%;
   font-size: 1.25rem;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.settingsButton:hover {
-  background: #f8f9fa;
-  border-color: #adb5bd;
+.themeButton:hover,
+.settingsButton:hover,
+.helpButton:hover {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border-dark);
+}
+
+.showScoreButton {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  background: #40c057;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.showScoreButton:hover {
+  background: #2f9e44;
 }
 
 .footer {
@@ -72,17 +142,17 @@
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
   font-weight: 600;
-  color: #495057;
-  background: #ffffff;
-  border: 2px solid #dee2e6;
+  color: var(--color-text-secondary);
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .newGameButton:hover {
-  background: #f8f9fa;
-  border-color: #adb5bd;
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border-dark);
 }
 
 .newGameButton:active {
@@ -95,10 +165,63 @@
   opacity: 0.6;
 }
 
+/* Generating Overlay */
+.generatingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.generatingContent {
+  background: var(--color-bg);
+  padding: 2rem 3rem;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  min-width: 200px;
+}
+
+.heartbeat {
+  width: 80px;
+  height: 80px;
+  animation: heartbeat 1.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px var(--color-primary));
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 10px var(--color-primary));
+  }
+  50% {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 25px var(--color-primary)) drop-shadow(0 0 40px var(--color-primary));
+  }
+}
+
+.generatingMessage {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
 /* Mobile optimization */
 @media (max-width: 480px) {
   .mainContent {
-    padding-bottom: 160px;
+    padding-bottom: 0;
+  }
+
+  .statusBar {
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
   }
 
   .bottomActions {
@@ -113,6 +236,7 @@
     font-size: 1.25rem;
   }
 
+  .themeButton,
   .settingsButton {
     width: 36px;
     height: 36px;
@@ -126,5 +250,23 @@
   .newGameButton {
     padding: 0.625rem 1.25rem;
     font-size: 0.9rem;
+  }
+  
+  /* Simplify heartbeat animation on mobile */
+  .heartbeat {
+    animation: heartbeatSimple 1.2s ease-in-out infinite;
+    filter: none;
+  }
+  
+  @keyframes heartbeatSimple {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+}
+
+/* Respect user's reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .heartbeat {
+    animation: none;
   }
 }

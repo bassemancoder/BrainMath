@@ -2,27 +2,38 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 44px;
   min-width: 44px;
-  padding: 0 6px;
+  max-width: 44px;
   height: 44px;
   font-size: 1.1rem;
   font-weight: 600;
   border-radius: 8px;
   user-select: none;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  box-sizing: border-box;
+  /* GPU acceleration for animations */
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 /* Number cells */
 .numberCell {
-  background: #f8f9fa;
-  border: 2px solid #dee2e6;
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
 }
 
 .numberCell.editable {
-  background: #ffffff;
+  background: var(--color-bg);
   border: 2px solid #4dabf7;
   color: #1971c2;
   cursor: pointer;
+}
+
+[data-theme="dark"] .numberCell.editable {
+  border-color: #4dabf7;
+  color: #74c0fc;
 }
 
 .numberCell.editable:hover {
@@ -31,9 +42,29 @@
   color: #1864ab;
 }
 
+/* Prevent hover from overriding selected state */
+.numberCell.editable.selected:hover {
+  background: #339af0;
+  border-color: #1971c2;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .numberCell.editable:hover {
+  background: #1e3a5f;
+  border-color: #4dabf7;
+  color: #a5d8ff;
+}
+
+[data-theme="dark"] .numberCell.editable.selected:hover {
+  background: #339af0;
+  border-color: #1971c2;
+  color: #ffffff;
+}
+
 .numberCell.fixed {
-  background: #e9ecef;
-  color: #495057;
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  color: var(--color-text);
   cursor: default;
 }
 
@@ -41,7 +72,25 @@
   background: #339af0;
   border-color: #1971c2;
   color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.3);
+  animation: selectedGlow 1.2s ease-in-out infinite;
+}
+
+@keyframes selectedGlow {
+  0%, 100% {
+    box-shadow: 
+      0 0 0 4px rgba(51, 154, 240, 0.6), 
+      0 0 25px 5px rgba(51, 154, 240, 0.7), 
+      0 0 50px 10px rgba(51, 154, 240, 0.5),
+      0 0 80px 15px rgba(51, 154, 240, 0.3);
+  }
+  50% {
+    box-shadow: 
+      0 0 0 6px rgba(51, 154, 240, 0.8), 
+      0 0 40px 10px rgba(51, 154, 240, 0.9), 
+      0 0 70px 20px rgba(51, 154, 240, 0.6),
+      0 0 100px 30px rgba(51, 154, 240, 0.4),
+      0 0 120px 40px rgba(51, 154, 240, 0.2);
+  }
 }
 
 .numberCell.error {
@@ -50,26 +99,136 @@
   animation: shake 0.3s ease;
 }
 
+[data-theme="dark"] .numberCell.error {
+  background: #5c2828;
+  border-color: #f87171;
+}
+
 .numberCell.selected.error {
   background: #fa5252;
   border-color: #e03131;
   color: #ffffff;
 }
 
+/* Highlighted cells (when clicking used number in NumberPad) */
+.numberCell.highlighted {
+  background: #fff9db;
+  border-color: #fab005;
+  box-shadow: 0 0 0 2px rgba(250, 176, 5, 0.3);
+}
+
+[data-theme="dark"] .numberCell.highlighted {
+  background: #5c4d1f;
+  border-color: #ffd43b;
+  box-shadow: 0 0 0 2px rgba(255, 212, 59, 0.3);
+}
+
+/* Swap source cell (first cell selected for swap) */
+.numberCell.swapSource {
+  background: #339af0;
+  border-color: #1971c2;
+  color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.4);
+  animation: swapPulse 1s ease-in-out infinite;
+}
+
+[data-theme="dark"] .numberCell.swapSource {
+  background: #1971c2;
+  border-color: #4dabf7;
+  color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.4);
+}
+
+@keyframes swapPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.4); }
+  50% { box-shadow: 0 0 0 5px rgba(51, 154, 240, 0.2); }
+}
+
+/* Hint target cell (cell just filled by hint) */
+.numberCell.hintTarget {
+  background: #d3f9d8;
+  border-color: #40c057;
+  color: #1a1a1a;
+  box-shadow: 0 0 0 3px rgba(64, 192, 87, 0.4);
+  animation: hintPulse 1.5s ease-in-out infinite;
+}
+
+[data-theme="dark"] .numberCell.hintTarget {
+  background: #2f9e44;
+  border-color: #69db7c;
+  color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(105, 219, 124, 0.4);
+}
+
+@keyframes hintPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(64, 192, 87, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(64, 192, 87, 0.2); }
+}
+
+/* Error hint cell (misplaced number detected) */
+.numberCell.errorHint {
+  background: #fff5f5;
+  border-color: #fa5252;
+  color: #c92a2a;
+  box-shadow: 0 0 0 3px rgba(250, 82, 82, 0.4);
+  animation: errorPulse 1.5s ease-in-out infinite;
+}
+
+[data-theme="dark"] .numberCell.errorHint {
+  background: #862e2e;
+  border-color: #f87171;
+  color: #fecaca;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.4);
+}
+
+@keyframes errorPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(250, 82, 82, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(250, 82, 82, 0.2); }
+}
+
+/* Just placed cell - fade out glow animation */
+.numberCell.justPlaced {
+  animation: justPlacedFadeOut 2s ease-out forwards;
+}
+
+@keyframes justPlacedFadeOut {
+  0% {
+    box-shadow: 
+      0 0 0 4px rgba(51, 154, 240, 0.6), 
+      0 0 25px 5px rgba(51, 154, 240, 0.7), 
+      0 0 50px 10px rgba(51, 154, 240, 0.5),
+      0 0 80px 15px rgba(51, 154, 240, 0.3);
+  }
+  100% {
+    box-shadow: 
+      0 0 0 0px rgba(51, 154, 240, 0),
+      0 0 0 0px rgba(51, 154, 240, 0),
+      0 0 0 0px rgba(51, 154, 240, 0),
+      0 0 0 0px rgba(51, 154, 240, 0);
+  }
+}
+
 /* Operator cells */
 .operatorCell {
-  background: transparent;
-  color: #868e96;
-  font-size: 1.5rem;
-  font-weight: 400;
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.operatorSymbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  transform: translateY(-1px);
 }
 
 /* Result cells (= and result number) */
 .resultCell {
-  background: #f1f3f5;
-  color: #495057;
-  font-weight: 700;
-  border: 2px solid #ced4da;
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  color: var(--color-text);
+  font-weight: 600;
 }
 
 /* Shake animation for errors */
@@ -83,6 +242,8 @@
 @media (max-width: 480px) {
   .cell {
     width: 40px;
+    min-width: 40px;
+    max-width: 40px;
     height: 40px;
     font-size: 1.1rem;
   }
@@ -90,8 +251,91 @@
 
 @media (max-width: 360px) {
   .cell {
-    width: 36px;
-    height: 36px;
-    font-size: 1rem;
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+
+  .operatorCell {
+    font-size: 1.1rem;
+  }
+}
+
+/* ==========================================
+   PERFORMANCE OPTIMIZATIONS
+   ========================================== */
+
+/* Reduce animations on mobile for better performance */
+@media (max-width: 480px) {
+  /* Simplify selected glow animation on mobile */
+  .numberCell.selected {
+    animation: selectedGlowSimple 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes selectedGlowSimple {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.5); }
+    50% { box-shadow: 0 0 0 5px rgba(51, 154, 240, 0.3); }
+  }
+  
+  /* Simplify hint pulse on mobile */
+  .numberCell.hintTarget {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(64, 192, 87, 0.4);
+  }
+  
+  /* Simplify error pulse on mobile */
+  .numberCell.errorHint {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(250, 82, 82, 0.4);
+  }
+  
+  /* Simplify swap pulse on mobile */
+  .numberCell.swapSource {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.4);
+  }
+  
+  /* Simplify just-placed animation on mobile */
+  .numberCell.justPlaced {
+    animation: justPlacedSimple 1s ease-out forwards;
+  }
+  
+  @keyframes justPlacedSimple {
+    0% { box-shadow: 0 0 0 4px rgba(51, 154, 240, 0.6); }
+    100% { box-shadow: 0 0 0 0px rgba(51, 154, 240, 0); }
+  }
+}
+
+/* Respect user's reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .cell {
+    transition: none;
+  }
+  
+  .numberCell.selected {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.6);
+  }
+  
+  .numberCell.error {
+    animation: none;
+  }
+  
+  .numberCell.swapSource {
+    animation: none;
+  }
+  
+  .numberCell.hintTarget {
+    animation: none;
+  }
+  
+  .numberCell.errorHint {
+    animation: none;
+  }
+  
+  .numberCell.justPlaced {
+    animation: none;
   }
 }

@@ -7,6 +7,7 @@ import type { Grid, CellError } from '@domain/types';
 import { isNumberCell } from '@domain/entities/Cell';
 import { setNumberValue } from '@domain/services/GridService';
 import { validateGrid, checkWinCondition } from '@domain/services/ValidationService';
+import { Cell } from '@domain/constants';
 
 export interface PlaceNumberInput {
   grid: Grid;
@@ -67,7 +68,7 @@ export function placeNumber(input: PlaceNumberInput): PlaceNumberOutput {
   }
   
   // Validate value range
-  if (value !== null && (value < 1 || value > 200 || !Number.isInteger(value))) {
+  if (value !== null && (value < Cell.MIN_VALUE || value > Cell.MAX_VALUE || !Number.isInteger(value))) {
     return {
       success: false,
       grid,

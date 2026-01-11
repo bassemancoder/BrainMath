@@ -13,24 +13,16 @@ import {
   SIZE_TO_CODE, 
   CODE_TO_SIZE,
 } from '@domain/services/DifficultySettings';
-
-/** Valid characters for the seed portion of the hash */
-const SEED_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+import { Hash } from '@domain/constants';
 
 /** Valid size codes */
 const VALID_SIZE_CODES = Object.keys(CODE_TO_SIZE);
-
-/** Total hash length */
-const HASH_LENGTH = 6;
-
-/** Seed length within the hash */
-const SEED_LENGTH = 4;
 
 /**
  * Validates if a string is a valid hash format
  */
 export function isValidHash(hash: string): boolean {
-  if (typeof hash !== 'string' || hash.length !== HASH_LENGTH) {
+  if (typeof hash !== 'string' || hash.length !== Hash.LENGTH) {
     return false;
   }
 
@@ -51,7 +43,7 @@ export function isValidHash(hash: string): boolean {
   // Check seed characters (last 4 characters)
   const seed = upperHash.slice(2);
   for (const char of seed) {
-    if (!SEED_CHARS.includes(char)) {
+    if (!Hash.SEED_CHARS_VALID.includes(char)) {
       return false;
     }
   }
@@ -88,13 +80,13 @@ export function encodeHash(size: GridSize, difficulty: Difficulty, seed: string)
   if (!DIFFICULTIES.includes(difficulty)) {
     throw new Error(`Invalid difficulty: ${difficulty}`);
   }
-  if (seed.length !== SEED_LENGTH) {
-    throw new Error(`Seed must be ${SEED_LENGTH} characters`);
+  if (seed.length !== Hash.SEED_LENGTH) {
+    throw new Error(`Seed must be ${Hash.SEED_LENGTH} characters`);
   }
 
   const upperSeed = seed.toUpperCase();
   for (const char of upperSeed) {
-    if (!SEED_CHARS.includes(char)) {
+    if (!Hash.SEED_CHARS.includes(char)) {
       throw new Error(`Invalid seed character: ${char}`);
     }
   }
@@ -108,9 +100,9 @@ export function encodeHash(size: GridSize, difficulty: Difficulty, seed: string)
  */
 export function generateSeed(randomFn: () => number): string {
   let seed = '';
-  for (let i = 0; i < SEED_LENGTH; i++) {
-    const index = Math.floor(randomFn() * SEED_CHARS.length);
-    seed += SEED_CHARS[index];
+  for (let i = 0; i < Hash.SEED_LENGTH; i++) {
+    const index = Math.floor(randomFn() * Hash.SEED_CHARS.length);
+    seed += Hash.SEED_CHARS[index];
   }
   return seed;
 }

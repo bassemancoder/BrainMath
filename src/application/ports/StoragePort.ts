@@ -3,10 +3,27 @@
  * Allows dependency injection for testability
  */
 
-export interface BestTime {
+/**
+ * Saved game state for resuming after page refresh
+ */
+export interface SavedGameState {
   hash: string;
-  time: number; // seconds
-  date: string; // ISO date string
+  /** Serialized grid cells - the user's current progress */
+  gridCells: string;
+  /** Available numbers remaining */
+  availableNumbers: number[];
+  /** Numbers that have been placed */
+  usedNumbers: number[];
+  /** Timer value in seconds */
+  timer: number;
+  /** Count of failed validation attempts (for score penalty) */
+  wrongAttemptCount: number;
+  /** Count of undo actions used (for score penalty) */
+  undoCount: number;
+  /** Count of hints used (for score penalty) */
+  hintCount: number;
+  /** Timestamp when saved */
+  savedAt: string;
 }
 
 /**
@@ -14,19 +31,19 @@ export interface BestTime {
  */
 export interface StoragePort {
   /**
-   * Saves the best time for a puzzle hash
+   * Saves in-progress game state
    */
-  saveBestTime(hash: string, time: number): void;
+  saveGameState(state: SavedGameState): void;
   
   /**
-   * Gets the best time for a puzzle hash
+   * Gets saved game state for a hash (if exists and not expired)
    */
-  getBestTime(hash: string): BestTime | null;
+  getGameState(hash: string): SavedGameState | null;
   
   /**
-   * Gets all best times
+   * Clears saved game state (e.g., when puzzle is won)
    */
-  getAllBestTimes(): BestTime[];
+  clearGameState(hash: string): void;
   
   /**
    * Clears all stored data

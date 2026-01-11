@@ -9,3 +9,4 @@ export { Timer } from './Timer/Timer';
 export { HashDisplay } from './HashDisplay/HashDisplay';
 export { GameOver } from './GameOver/GameOver';
 export { Settings } from './Settings/Settings';
+export { Help } from './Help/Help';

@@ -10,8 +10,8 @@ import type { Difficulty, Operator } from '@domain/types';
 // GRID SIZE
 // ============================================
 
-/** Valid puzzle sizes: Beginner=5, Medium=10, Hard=15, Expert=30 */
-export type GridSize = 5 | 10 | 15 | 30;
+/** Valid puzzle sizes: Beginner=5, Medium=10, Hard=15, Advanced=20, Expert=30 */
+export type GridSize = 5 | 10 | 15 | 20 | 30;
 
 // ============================================
 // NUMBER RANGES
@@ -40,8 +40,8 @@ const NUMBER_RANGES: Record<Difficulty, Record<string, NumberRange>> = {
   3: {
     '5': { min: 1, max: 20, maxResult: 50 },
     '10': { min: 2, max: 30, maxResult: 100 },
-    '15': { min: 5, max: 50, maxResult: 150 },
-    '20': { min: 5, max: 75, maxResult: 200 },
+    '15': { min: 5, max: 50, maxResult: 125 },
+    '20': { min: 5, max: 75, maxResult: 150 },
     default: { min: 5, max: 50, maxResult: 150 },
   },
 };
@@ -49,6 +49,35 @@ const NUMBER_RANGES: Record<Difficulty, Record<string, NumberRange>> = {
 export function getNumberRange(difficulty: Difficulty, size: GridSize): NumberRange {
   const difficultyRanges = NUMBER_RANGES[difficulty];
   return difficultyRanges[String(size)] || difficultyRanges.default;
+}
+
+// ============================================
+// DIVISION CONSTRAINTS
+// ============================================
+
+/**
+ * Constraints for division operations to ensure mental-math friendly equations
+ * Without these, division tends to produce result=1 (X÷X=1) due to probability
+ */
+export interface DivisionConstraints {
+  minResult: number;   // Minimum quotient (avoid trivial result=1)
+  maxResult: number;   // Maximum quotient (keep mental math manageable)
+  minDivisor: number;  // Minimum divisor (avoid trivial ÷1)
+}
+
+/**
+ * Division constraints by difficulty level
+ * Easy/Medium: Friendly divisions with small quotients
+ * Hard: Allow more flexibility including trivial divisions
+ */
+const DIVISION_CONSTRAINTS: Record<Difficulty, DivisionConstraints> = {
+  1: { minResult: 1, maxResult: 10, minDivisor: 2 },  // Easy: no ÷1, no result=1
+  2: { minResult: 2, maxResult: 12, minDivisor: 2 },  // Medium: slightly larger quotients
+  3: { minResult: 2, maxResult: 15, minDivisor: 2 },  // Hard: allow trivial divisions
+};
+
+export function getDivisionConstraints(difficulty: Difficulty): DivisionConstraints {
+  return DIVISION_CONSTRAINTS[difficulty] || DIVISION_CONSTRAINTS[1];
 }
 
 // ============================================
@@ -62,8 +91,8 @@ export function getNumberRange(difficulty: Difficulty, size: GridSize): NumberRa
  * Hard: All four operations
  */
 const OPERATORS_BY_DIFFICULTY: Record<Difficulty, Operator[]> = {
-  1: ['+'],                      // Easy: addition only
-  2: ['+', '-'],                 // Medium: add and subtract
+  1: ['+', '-'],                 // Easy: addition only
+  2: ['+', '-', '×', '÷'],       // Medium: add and subtract
   3: ['+', '-', '×', '÷'],       // Hard: all operations
 };
 
@@ -82,7 +111,7 @@ export function getOperatorsForDifficulty(difficulty: Difficulty): Operator[] {
 const REMOVAL_PERCENTAGE: Record<Difficulty, number> = {
   1: 0.40, // Easy: remove 40% of numbers
   2: 0.55, // Medium: remove 55% of numbers
-  3: 0.75, // Hard: remove 75% of numbers
+  3: 0.70, // Hard: remove 75% of numbers
 };
 
 export function getRemovalPercentage(difficulty: Difficulty): number {
@@ -117,6 +146,8 @@ export interface EquationComplexity {
   threeNumbers: number;  // Percentage of 3-number equations (e.g., 3 + 5 - 2 = 6)
   fourNumbers: number;   // Percentage of 4-number equations (e.g., 3 + 5 - 2 + 1 = 7)
   sharedResultProbability: number; // Probability that an equation shares its result cell with another
+  maxZeroRevealedEquations: number; // Max percentage of equations allowed to have 0 revealed cells
+  minMultiplyDivideRatio: number; // Min percentage of equations that must contain × or ÷
 }
 
 const EQUATION_COMPLEXITY: Record<Difficulty, EquationComplexity> = {
@@ -125,18 +156,24 @@ const EQUATION_COMPLEXITY: Record<Difficulty, EquationComplexity> = {
     threeNumbers: 0.0,
     fourNumbers: 0.0,
     sharedResultProbability: 0.0, // Easy: no shared results
+    maxZeroRevealedEquations: 0.0, // Easy: no equations with all blanks
+    minMultiplyDivideRatio: 0.0, // Easy: no × ÷ required (only + -)
   },
   2: {
     twoNumbers: 0.6,    // Medium: 60% two-number, 40% three-number
     threeNumbers: 0.4,
     fourNumbers: 0.0,
     sharedResultProbability: 0.2, // Medium: 20% chance of shared results
+    maxZeroRevealedEquations: 0.1, // Medium: max 10% of equations can have all blanks
+    minMultiplyDivideRatio: 0.3, // Medium: at least 30% of equations must have × or ÷
   },
   3: {
-    twoNumbers: 0.3,    // Hard: 30% two-number, 40% three-number, 30% four-number
-    threeNumbers: 0.6,
+    twoNumbers: 0.4,    // Hard: 40% two-number, 55% three-number, 5% four-number
+    threeNumbers: 0.5,
     fourNumbers: 0.1,
-    sharedResultProbability: 0.4, // Hard: 40% chance of shared results
+    sharedResultProbability: 0.5, // Hard: 40% chance of shared results
+    maxZeroRevealedEquations: 0.2, // Hard: max 20% of equations can have all blanks
+    minMultiplyDivideRatio: 0.5, // Hard: at least 50% of equations must have × or ÷
   },
 };
 
@@ -149,6 +186,20 @@ export function getEquationComplexity(difficulty: Difficulty): EquationComplexit
  */
 export function getSharedResultProbability(difficulty: Difficulty): number {
   return getEquationComplexity(difficulty).sharedResultProbability;
+}
+
+/**
+ * Gets the max percentage of equations allowed to have 0 revealed cells
+ */
+export function getMaxZeroRevealedEquations(difficulty: Difficulty): number {
+  return getEquationComplexity(difficulty).maxZeroRevealedEquations;
+}
+
+/**
+ * Gets the minimum ratio of equations that must contain × or ÷
+ */
+export function getMinMultiplyDivideRatio(difficulty: Difficulty): number {
+  return getEquationComplexity(difficulty).minMultiplyDivideRatio;
 }
 
 /**
@@ -174,11 +225,20 @@ export function pickEquationSize(difficulty: Difficulty, random: number): 2 | 3 
 /**
  * Target number of equations based on grid size and difficulty
  * More equations = more complex interconnected puzzle
+ * 
+ * Aim to fill the grid densely with equations
  */
 export function getTargetEquationCount(size: GridSize, difficulty: Difficulty): number {
-  const baseEquations = Math.floor(size / 2);
-  const difficultyBonus = difficulty >= 3 ? Math.floor(size / 4) : 0;
-  return Math.max(4, baseEquations + difficultyBonus);
+  // More aggressive equation counts for denser grids
+  // Base: roughly 1 equation per row of the grid
+  const baseEquations = size;
+  
+  // Difficulty multiplier: Easy 80%, Medium 100%, Hard 120%
+  const difficultyMultiplier = 0.6 + (difficulty * 0.2);
+  
+  const targetEquations = Math.floor(baseEquations * difficultyMultiplier);
+  
+  return Math.max(4, targetEquations);
 }
 
 // ============================================
@@ -217,12 +277,13 @@ export function getDifficultyLabel(difficulty: Difficulty): string {
 // ============================================
 
 /** All valid grid sizes in order */
-export const GRID_SIZES: GridSize[] = [5, 10, 15, 30];
+export const GRID_SIZES: GridSize[] = [5, 10, 15, 20, 30];
 
 export const SIZE_LABELS: Record<GridSize, string> = {
   5: 'Beginner (5×5)',
   10: 'Medium (10×10)',
   15: 'Hard (15×15)',
+  20: 'Advanced (20×20)',
   30: 'Expert (30×30)',
 };
 
@@ -235,6 +296,7 @@ export const SIZE_TO_CODE: Record<GridSize, string> = {
   5: 'A',
   10: 'B',
   15: 'C',
+  20: 'E',
   30: 'D',
 };
 
@@ -243,6 +305,7 @@ export const CODE_TO_SIZE: Record<string, GridSize> = {
   'A': 5,
   'B': 10,
   'C': 15,
+  'E': 20,
   'D': 30,
 };
 
@@ -258,6 +321,7 @@ export function getDifficultyInfo(difficulty: Difficulty, size: GridSize) {
     sizeLabel: SIZE_LABELS[size],
     numberRange: getNumberRange(difficulty, size),
     operators: getOperatorsForDifficulty(difficulty),
+    divisionConstraints: getDivisionConstraints(difficulty),
     equationComplexity: getEquationComplexity(difficulty),
     removalPercentage: getRemovalPercentage(difficulty),
     minRemovalsPerEquation: getMinRemovalsPerEquation(difficulty),
