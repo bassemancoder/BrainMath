@@ -234,7 +234,7 @@ export function getTargetEquationCount(size: GridSize, difficulty: Difficulty): 
   const baseEquations = size;
   
   // Difficulty multiplier: Easy 80%, Medium 100%, Hard 120%
-  const difficultyMultiplier = 0.6 + (difficulty * 0.2);
+  const difficultyMultiplier = 0.6 + (difficulty * 0.4);
   
   const targetEquations = Math.floor(baseEquations * difficultyMultiplier);
   
