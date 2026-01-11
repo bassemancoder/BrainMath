@@ -32,7 +32,7 @@ jobs:
 
       - name: Set version
         run: |
-          VERSION=$(date +'%Y.%-m.%-d').${{ github.run_number }}
+          VERSION=$(date +'%Y.%-m%d').${{ github.run_number }}
           npm version $VERSION --no-git-tag-version --allow-same-version
           echo "Built version: $VERSION"
 
