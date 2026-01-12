@@ -109,22 +109,6 @@ export const App: React.FC = () => {
                 </button>
               )}
               <button
-                className={styles.helpButton}
-                onClick={() => setShowHelp(true)}
-                type="button"
-                aria-label="Help"
-              >
-                ❓
-              </button>
-              <button
-                className={styles.themeButton}
-                onClick={toggleTheme}
-                type="button"
-                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              >
-                {theme === 'dark' ? '☀️' : '🌙'}
-              </button>
-              <button
                 className={styles.settingsButton}
                 onClick={actions.showSettings}
                 type="button"
