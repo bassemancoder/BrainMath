@@ -303,6 +303,8 @@ export const App: React.FC = () => {
             swapMode={state.swapMode}
             swapFirstCellSelected={state.swapFirstCell !== null}
             hasEmptyCells={state.availableNumbers.length > 0}
+            hintCooldownUntil={state.hintCooldownUntil}
+            score={score}
             availableNumbers={state.availableNumbers}
             usedNumbers={state.usedNumbers}
             highlightedNumber={state.highlightedNumber}

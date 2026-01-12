@@ -136,6 +136,15 @@ export const Undo = {
 } as const;
 
 // ============================================
+// HINT FUNCTIONALITY
+// ============================================
+
+export const Hint = {
+  /** Cooldown duration in milliseconds after using a hint */
+  COOLDOWN_MS: 30 * 1000,
+} as const;
+
+// ============================================
 // LOCAL STORAGE KEYS
 // ============================================
 

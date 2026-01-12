@@ -3,7 +3,7 @@
  * Shows available numbers and used (placed) numbers
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './NumberPad.module.css';
 
 interface NumberPadProps {
@@ -20,6 +20,10 @@ interface NumberPadProps {
   swapFirstCellSelected?: boolean;
   /** Whether there are empty cells to give hints for */
   hasEmptyCells?: boolean;
+  /** Timestamp when hint cooldown expires */
+  hintCooldownUntil?: number | null;
+  /** Current score */
+  score?: number;
   /** Available numbers that can be placed (includes duplicates) */
   availableNumbers: number[];
   /** Numbers that have been placed on the board */
@@ -30,7 +34,38 @@ interface NumberPadProps {
   onUsedNumberClick?: (value: number) => void;
 }
 
-export const NumberPad: React.FC<NumberPadProps> = ({ onNumberClick, onUndo, onSolve, onSwap, onHint, disabled, canUndo, swapMode, swapFirstCellSelected, hasEmptyCells, availableNumbers, usedNumbers, highlightedNumber, onUsedNumberClick }) => {
+export const NumberPad: React.FC<NumberPadProps> = ({ onNumberClick, onUndo, onSolve, onSwap, onHint, disabled, canUndo, swapMode, swapFirstCellSelected, hasEmptyCells, hintCooldownUntil, score, availableNumbers, usedNumbers, highlightedNumber, onUsedNumberClick }) => {
+  // Track remaining cooldown in state (updated by interval)
+  const [hintCooldownRemaining, setHintCooldownRemaining] = useState(() => {
+    if (!hintCooldownUntil) return 0;
+    return Math.max(0, Math.ceil((hintCooldownUntil - Date.now()) / 1000));
+  });
+
+  useEffect(() => {
+    if (!hintCooldownUntil) {
+      return;
+    }
+
+    // Calculate remaining time
+    const calculateRemaining = () => Math.max(0, Math.ceil((hintCooldownUntil - Date.now()) / 1000));
+
+    const interval = setInterval(() => {
+      const remaining = calculateRemaining();
+      setHintCooldownRemaining(remaining);
+      if (remaining === 0) {
+        clearInterval(interval);
+      }
+    }, 100); // Start quickly to get initial value, then updates every 100ms for smoother countdown
+    
+    return () => clearInterval(interval);
+  }, [hintCooldownUntil]);
+
+  const isHintOnCooldown = hintCooldownRemaining > 0;
+
+  // Calculate progress percentage
+  const totalNumbers = availableNumbers.length + usedNumbers.length;
+  const progressPercent = totalNumbers > 0 ? Math.round((usedNumbers.length / totalNumbers) * 100) : 0;
+
   // Group available numbers by value and count occurrences
   const numberCounts = new Map<number, number>();
   for (const num of availableNumbers) {
@@ -73,6 +108,8 @@ export const NumberPad: React.FC<NumberPadProps> = ({ onNumberClick, onUndo, onS
       
       {/* Row 2: Action buttons */}
       <div className={styles.row}>
+        <span className={styles.scoreText} title="Current score">{score ?? 0}</span>
+        <span className={styles.progressText} title="Progress">{progressPercent}%</span>
         <button
           className={`${styles.numberButton} ${styles.clearButton}`}
           onClick={() => onNumberClick(null)}
@@ -104,14 +141,14 @@ export const NumberPad: React.FC<NumberPadProps> = ({ onNumberClick, onUndo, onS
         )}
         {onHint && (
           <button
-            className={`${styles.numberButton} ${styles.hintButton}`}
+            className={`${styles.numberButton} ${styles.hintButton} ${isHintOnCooldown ? styles.hintCooldown : ''}`}
             onClick={onHint}
-            disabled={!hasEmptyCells}
+            disabled={!hasEmptyCells || isHintOnCooldown}
             type="button"
-            aria-label="Get a hint"
-            title="Get a hint (fills a random cell)"
+            aria-label={isHintOnCooldown ? `Hint cooldown: ${hintCooldownRemaining}s` : "Get a hint"}
+            title={isHintOnCooldown ? `Wait ${hintCooldownRemaining}s for next hint` : "Get a hint (fills a random cell)"}
           >
-            💡
+            {isHintOnCooldown ? hintCooldownRemaining : '💡'}
           </button>
         )}
         {onSolve && (

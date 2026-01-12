@@ -4,7 +4,7 @@
  */
 
 import type { Puzzle, CellError, GameStatus, GridSize, Difficulty } from '@domain/types';
-import { Defaults, Undo, TimeFormat } from '@domain/constants';
+import { Defaults, Undo, Hint, TimeFormat } from '@domain/constants';
 import { countEnterableCells, calculateInitialScore } from '@domain/services';
 
 // ============================================
@@ -57,6 +57,8 @@ export interface GameState {
   errorHintCell: { row: number; col: number } | null;
   /** Cell that just had a number placed (for fade-out animation) */
   justPlacedCell: { row: number; col: number } | null;
+  /** Timestamp when hint cooldown expires (30 seconds after using hint) */
+  hintCooldownUntil: number | null;
   settings: {
     gridSize: GridSize;
     difficulty: Difficulty;
@@ -86,6 +88,7 @@ export const initialGameState: GameState = {
   hintedCell: null,
   errorHintCell: null,
   justPlacedCell: null,
+  hintCooldownUntil: null,
   settings: {
     gridSize: Defaults.GRID_SIZE as GridSize,
     difficulty: Defaults.DIFFICULTY as Difficulty,
@@ -351,6 +354,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         usedNumbers: action.usedNumbers,
         hintedCell: { row: action.row, col: action.col },
         hintCount: state.hintCount + 1,
+        hintCooldownUntil: Date.now() + Hint.COOLDOWN_MS,
         selectedCell: null,
         highlightedNumber: null,
       };
@@ -362,14 +366,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         hintedCell: null,
       };
 
-    case 'SHOW_ERROR_HINT':
+    case 'SHOW_ERROR_HINT': {
       return {
         ...state,
         errorHintCell: { row: action.row, col: action.col },
         hintCount: state.hintCount + 1,
+        hintCooldownUntil: Date.now() + Hint.COOLDOWN_MS,
         selectedCell: null,
         highlightedNumber: null,
       };
+    }
 
     case 'CLEAR_ERROR_HINT':
       return {
