@@ -12,7 +12,7 @@ import logo from '../assets/logo.png';
 
 export const App: React.FC = () => {
   const { state, actions } = useGame();
-  const { theme, toggleTheme } = useTheme();
+  useTheme(); // Initialize theme (side effects only)
   
   // Track if win dialog has been dismissed for current game
   const [winDialogDismissedForHash, setWinDialogDismissedForHash] = useState<string | null>(null);
