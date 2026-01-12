@@ -4,7 +4,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { TimeFormat, Timing } from '@domain/constants';
-import { getScoreBreakdown } from '@domain/services/ScoreService';
+import { getScoreBreakdown, getGridSizeLabel, getDifficultyLabel } from '@domain/services';
 import type { GridSize, Difficulty } from '@domain/types';
 import styles from './GameOver.module.css';
 import logo from '../../../assets/logo.png';
@@ -23,32 +23,6 @@ interface GameOverProps {
   difficulty: Difficulty;
   gridSize: GridSize;
   initialScore: number;
-}
-
-/**
- * Get display label for difficulty level
- */
-function getDifficultyLabel(difficulty: Difficulty): string {
-  switch (difficulty) {
-    case 1: return 'Easy';
-    case 2: return 'Medium';
-    case 3: return 'Hard';
-    default: return 'Unknown';
-  }
-}
-
-/**
- * Get display label for grid size
- */
-function getGridSizeLabel(gridSize: GridSize): string {
-  switch (gridSize) {
-    case 5: return '5×5 (Beginner)';
-    case 10: return '10×10 (Medium)';
-    case 15: return '15×15 (Hard)';
-    case 20: return '20×20 (Advanced)';
-    case 30: return '30×30 (Expert)';
-    default: return `${gridSize}×${gridSize}`;
-  }
 }
 
 function formatTime(seconds: number): string {

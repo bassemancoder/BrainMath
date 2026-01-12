@@ -221,36 +221,16 @@ export const App: React.FC = () => {
           {!headerCollapsed && (
             <>
               <header className={styles.header}>
-                <div className={styles.titleGroup}>
-                  <img src={logo} alt="Brain Math" className={styles.logo} />
-                  <h1 className={styles.title}>Brain Math</h1>
-                </div>
-                <div className={styles.headerButtons}>
-                  <button
-                    className={styles.helpButton}
-                    onClick={() => setShowHelp(true)}
-                    type="button"
-                    aria-label="Help"
-                  >
-                    ❓
-                  </button>
-                  <button
-                    className={styles.themeButton}
-                    onClick={toggleTheme}
-                    type="button"
-                    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                  >
-                    {theme === 'dark' ? '☀️' : '🌙'}
-                  </button>
-                  <button
-                    className={styles.settingsButton}
-                    onClick={actions.showSettings}
-                    type="button"
-                    aria-label="Settings"
-                  >
-                    ⚙️
-                  </button>
-                </div>
+                <img src={logo} alt="Brain Math" className={styles.logo} />
+                <h1 className={styles.title}>Brain Math</h1>
+                <button
+                  className={styles.settingsButton}
+                  onClick={actions.showSettings}
+                  type="button"
+                  aria-label="Settings"
+                >
+                  ⚙️
+                </button>
               </header>
 
               <div className={styles.statusBar}>

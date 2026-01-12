@@ -10,7 +10,7 @@ import type { Difficulty, Operator } from '@domain/types';
 // GRID SIZE
 // ============================================
 
-/** Valid puzzle sizes: Beginner=5, Medium=10, Hard=15, Advanced=20, Expert=30 */
+/** Valid puzzle sizes: Quick=5, Classic=10, Extended=15, Challenge=20, Marathon=30 */
 export type GridSize = 5 | 10 | 15 | 20 | 30;
 
 // ============================================
@@ -280,11 +280,11 @@ export function getDifficultyLabel(difficulty: Difficulty): string {
 export const GRID_SIZES: GridSize[] = [5, 10, 15, 20, 30];
 
 export const SIZE_LABELS: Record<GridSize, string> = {
-  5: 'Beginner (5×5)',
-  10: 'Medium (10×10)',
-  15: 'Hard (15×15)',
-  20: 'Advanced (20×20)',
-  30: 'Expert (30×30)',
+  5: 'Quick (5×5)',
+  10: 'Classic (10×10)',
+  15: 'Extended (15×15)',
+  20: 'Challenge (20×20)',
+  30: 'Marathon (30×30)',
 };
 
 export function getGridSizeLabel(size: GridSize): string {
