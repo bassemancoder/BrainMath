@@ -8,7 +8,7 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
 import type { GridSize, Difficulty, Puzzle } from '@domain/types';
 import { isNumberCell } from '@domain/entities/Cell';
-import { setNumberValue, getMissingNumbers, getCellAt } from '@domain/services/GridService';
+import { setNumberValue, getMissingNumbers, getCellAt, toggleNumberUncertain, setNumberUncertain } from '@domain/services/GridService';
 import { getAllEmptyCells } from '@domain/services/SolverService';
 import { validateGrid } from '@domain/services/ValidationService';
 import { createGameAsync, generateNewHash } from '@application/useCases/CreateGameUseCase';
@@ -50,6 +50,7 @@ interface GameContextType {
     setHighlightedNumber: (value: number | null) => void;
     toggleSwapMode: () => void;
     handleSwapCellClick: (row: number, col: number) => void;
+    toggleUncertain: () => void;
     useHint: () => void;
   };
 }
@@ -745,6 +746,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'TOGGLE_SWAP_MODE' });
   }, []);
 
+  // Toggle uncertain/maybe flag on the selected cell
+  const toggleUncertain = useCallback(() => {
+    if (!state.puzzle || !state.selectedCell) return;
+    
+    const cell = getCellAt(state.puzzle.grid, state.selectedCell.row, state.selectedCell.col);
+    if (!cell || !isNumberCell(cell) || cell.value === null) return;
+    
+    const newGrid = toggleNumberUncertain(state.puzzle.grid, state.selectedCell.row, state.selectedCell.col);
+    const newPuzzle: Puzzle = { ...state.puzzle, grid: newGrid };
+    dispatch({ type: 'TOGGLE_CELL_UNCERTAIN', puzzle: newPuzzle });
+  }, [state.puzzle, state.selectedCell]);
+
   // Get a random hint and place it
   const useHint = useCallback(() => {
     if (!state.puzzle) return;
@@ -870,10 +883,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
     const firstValue = firstCell.value;
     const secondValue = secondCell.value;
+    const firstUncertain = firstCell.isUncertain ?? false;
+    const secondUncertain = secondCell.isUncertain ?? false;
 
-    // Swap the values
+    // Swap the values and uncertain flags
     let newGrid = setNumberValue(state.puzzle.grid, state.swapFirstCell.row, state.swapFirstCell.col, secondValue);
+    newGrid = setNumberUncertain(newGrid, state.swapFirstCell.row, state.swapFirstCell.col, secondUncertain);
     newGrid = setNumberValue(newGrid, row, col, firstValue);
+    newGrid = setNumberUncertain(newGrid, row, col, firstUncertain);
 
     // Validate the new grid
     const validation = validateGrid(newGrid);
@@ -929,6 +946,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       setHighlightedNumber,
       toggleSwapMode,
       handleSwapCellClick,
+      toggleUncertain,
       useHint,
     },
   };

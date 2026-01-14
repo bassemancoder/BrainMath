@@ -78,6 +78,40 @@ export const Help: React.FC<HelpProps> = ({ onClose }) => {
           </ul>
         </section>
 
+        <section className={styles.section}>
+          <h3>🎮 Controls</h3>
+          <div className={styles.controlsList}>
+            <div className={styles.controlItem}>
+              <span className={styles.controlIcon}>123</span>
+              <span className={styles.controlLabel}><strong>Score</strong> — Your current score (decreases with time, wrong attempts, and hints)</span>
+            </div>
+            <div className={styles.controlItem}>
+              <span className={styles.controlIcon}>%</span>
+              <span className={styles.controlLabel}><strong>Progress</strong> — Percentage of cells filled</span>
+            </div>
+            <div className={styles.controlItem}>
+              <span className={styles.controlIcon}>✕</span>
+              <span className={styles.controlLabel}><strong>Clear</strong> — Remove the number from the selected cell</span>
+            </div>
+            <div className={styles.controlItem}>
+              <span className={styles.controlIcon}>✏️</span>
+              <span className={styles.controlLabel}><strong>Uncertain</strong> — Mark a cell as "maybe" (pencil mark style)</span>
+            </div>
+            <div className={styles.controlItem}>
+              <span className={styles.controlIcon}>↩</span>
+              <span className={styles.controlLabel}><strong>Undo</strong> — Revert your last move</span>
+            </div>
+            <div className={styles.controlItem}>
+              <span className={styles.controlIcon}>⇄</span>
+              <span className={styles.controlLabel}><strong>Swap</strong> — Exchange values between two cells</span>
+            </div>
+            <div className={styles.controlItem}>
+              <span className={styles.controlIcon}>💡</span>
+              <span className={styles.controlLabel}><strong>Hint</strong> — Auto-fill a random empty cell (30s cooldown)</span>
+            </div>
+          </div>
+        </section>
+
         <button className={styles.gotItButton} onClick={onClose}>
           Got it!
         </button>

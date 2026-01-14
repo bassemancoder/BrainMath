@@ -33,6 +33,7 @@ export interface NumberCell {
   type: 'number';
   value: number | null; // null = empty (user must fill), positive integers
   isFixed: boolean; // true = pre-filled, user cannot change
+  isUncertain?: boolean; // true = user marked as uncertain/maybe
   row: number;
   col: number;
 }

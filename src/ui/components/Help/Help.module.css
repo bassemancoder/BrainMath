@@ -140,6 +140,48 @@
   background: #228be6;
 }
 
+/* Controls list for NumberPad buttons */
+.controlsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.controlItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-bg-secondary);
+  border-radius: 8px;
+}
+
+.controlIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.controlLabel {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.controlLabel strong {
+  color: var(--color-text);
+}
+
 /* Mobile optimization */
 @media (max-width: 480px) {
   .modal {

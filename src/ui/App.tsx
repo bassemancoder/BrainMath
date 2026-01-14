@@ -5,7 +5,7 @@
 import React, { useState, useMemo } from 'react';
 import { useGame } from './context/GameContext';
 import { Board, NumberPad, Timer, HashDisplay, GameOver, Settings, Help } from './components';
-import { calculateScore } from '@domain/services';
+import { calculateScore, getCellAt } from '@domain/services';
 import { useTheme } from './hooks/useTheme';
 import styles from './App.module.css';
 import logo from '../assets/logo.png';
@@ -35,6 +35,12 @@ export const App: React.FC = () => {
       state.hintCount
     );
   }, [state.initialScore, state.timer, state.wrongAttemptCount, state.hintCount]);
+
+  // Get the currently selected cell (for uncertain button state)
+  const selectedCell = useMemo(() => {
+    if (!state.puzzle || !state.selectedCell) return null;
+    return getCellAt(state.puzzle.grid, state.selectedCell.row, state.selectedCell.col);
+  }, [state.puzzle, state.selectedCell]);
 
   const handleShare = async () => {
     const url = actions.getShareableUrl();
@@ -262,8 +268,11 @@ export const App: React.FC = () => {
             }
             onSwap={actions.toggleSwapMode}
             onHint={actions.useHint}
+            onUncertain={actions.toggleUncertain}
             disabled={!state.selectedCell && !state.swapMode}
             canUndo={state.undoStack.length > 0}
+            canToggleUncertain={selectedCell !== null && selectedCell.type === 'number' && selectedCell.value !== null && !selectedCell.isFixed}
+            isSelectedCellUncertain={selectedCell !== null && selectedCell.type === 'number' && selectedCell.isUncertain === true}
             swapMode={state.swapMode}
             swapFirstCellSelected={state.swapFirstCell !== null}
             hasEmptyCells={state.availableNumbers.length > 0}

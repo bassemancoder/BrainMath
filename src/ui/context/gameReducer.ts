@@ -128,6 +128,7 @@ export type GameAction =
   | { type: 'SET_HIGHLIGHTED_NUMBER'; value: number | null }
   | { type: 'TOGGLE_SWAP_MODE' }
   | { type: 'SET_SWAP_FIRST_CELL'; row: number; col: number }
+  | { type: 'TOGGLE_CELL_UNCERTAIN'; puzzle: Puzzle }
   | { type: 'CLEAR_SWAP_MODE' }
   | { type: 'SHOW_SETTINGS' }
   | { type: 'HIDE_SETTINGS' }
@@ -458,6 +459,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         swapMode: false,
         swapFirstCell: null,
+      };
+
+    case 'TOGGLE_CELL_UNCERTAIN':
+      return {
+        ...state,
+        puzzle: action.puzzle,
       };
 
     case 'SHOW_SETTINGS':

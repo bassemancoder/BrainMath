@@ -72,6 +72,9 @@ const CellComponent: React.FC<CellProps> = ({ cell, isSelected, hasError, isHigh
       } else {
         classes.push(styles.editable);
       }
+      if (cell.isUncertain) {
+        classes.push(styles.uncertain);
+      }
       if (isSelected) {
         classes.push(styles.selected);
       }

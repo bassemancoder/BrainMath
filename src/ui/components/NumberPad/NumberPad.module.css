@@ -195,6 +195,39 @@
   50% { opacity: 0.7; }
 }
 
+/* Uncertain/maybe button - pencil mark style */
+.uncertainButton {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border);
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.uncertainButton:hover:not(:disabled) {
+  background: #fff3bf;
+  border-color: #fab005;
+  color: #e67700;
+}
+
+[data-theme="dark"] .uncertainButton:hover:not(:disabled) {
+  background: #5c4d1f;
+  border-color: #ffd43b;
+  color: #ffe066;
+}
+
+/* Uncertain mode active (cell is marked uncertain) */
+.uncertainButton.uncertainActive {
+  background: #fff3bf;
+  border-color: #fab005;
+  color: #e67700;
+}
+
+[data-theme="dark"] .uncertainButton.uncertainActive {
+  background: #5c4d1f;
+  border-color: #ffd43b;
+  color: #ffe066;
+}
+
 /* Hint button - teal/green theme */
 .hintButton {
   background: #d3f9d8;

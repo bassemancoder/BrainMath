@@ -112,7 +112,36 @@ export function setNumberValue(grid: Grid, row: number, col: number, value: numb
     throw new Error(`Number value must be between ${CellConstants.MIN_VALUE} and ${CellConstants.MAX_VALUE}`);
   }
   
-  const newCell: NumberCell = { ...cell, value };
+  // Clear isUncertain when cell is cleared (value becomes null)
+  const isUncertain = value === null ? false : cell.isUncertain;
+  const newCell: NumberCell = { ...cell, value, isUncertain };
+  return setCellAt(grid, row, col, newCell);
+}
+
+/**
+ * Toggles the uncertain/maybe flag on a number cell (returns new grid)
+ * Only works on cells that have a value placed
+ */
+export function toggleNumberUncertain(grid: Grid, row: number, col: number): Grid {
+  const cell = getCellAt(grid, row, col);
+  if (!cell || !isNumberCell(cell) || cell.value === null) {
+    return grid;
+  }
+  
+  const newCell: NumberCell = { ...cell, isUncertain: !cell.isUncertain };
+  return setCellAt(grid, row, col, newCell);
+}
+
+/**
+ * Sets the uncertain/maybe flag on a number cell (returns new grid)
+ */
+export function setNumberUncertain(grid: Grid, row: number, col: number, isUncertain: boolean): Grid {
+  const cell = getCellAt(grid, row, col);
+  if (!cell || !isNumberCell(cell)) {
+    return grid;
+  }
+  
+  const newCell: NumberCell = { ...cell, isUncertain };
   return setCellAt(grid, row, col, newCell);
 }
 

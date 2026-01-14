@@ -118,10 +118,10 @@ export const TimeFormat = {
 // ============================================
 
 export const Defaults = {
-  /** Default grid size for new games */
-  GRID_SIZE: 5,
-  /** Default difficulty for new games */
-  DIFFICULTY: 3,
+  /** Default grid size for new games (10 = Classic) */
+  GRID_SIZE: 10,
+  /** Default difficulty for new games (2 = Medium) */
+  DIFFICULTY: 2,
   /** Initial timer value (seconds) */
   TIMER_VALUE: 0,
 } as const;
@@ -181,7 +181,7 @@ export const Score = {
   /** Initial score per enterable cell (cells where user can input numbers) */
   INITIAL_SCORE_PER_CELL: 100,
   /** Points deducted per second elapsed */
-  TIME_PENALTY_PER_SECOND: 1,
+  TIME_PENALTY_PER_SECOND: 2,
   /** Points deducted per failed validation attempt (equations with errors) */
   WRONG_ATTEMPT_PENALTY: 75,
   /** Points deducted per hint used */

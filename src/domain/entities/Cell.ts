@@ -14,7 +14,8 @@ export function createNumberCell(
   row: number,
   col: number,
   value: number | null = null,
-  isFixed: boolean = false
+  isFixed: boolean = false,
+  isUncertain: boolean = false
 ): NumberCell {
   // Validate value is positive or null
   if (value !== null && (value < CellConstants.MIN_VALUE || value > CellConstants.MAX_VALUE)) {
@@ -24,6 +25,7 @@ export function createNumberCell(
     type: 'number',
     value,
     isFixed,
+    isUncertain,
     row,
     col,
   };

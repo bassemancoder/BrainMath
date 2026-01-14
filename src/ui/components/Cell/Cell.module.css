@@ -36,29 +36,59 @@
   color: #74c0fc;
 }
 
-.numberCell.editable:hover {
-  background: #e7f5ff;
-  border-color: #339af0;
-  color: #1864ab;
+/* Only apply hover on devices with precise pointers (mouse/trackpad) */
+@media (hover: hover) and (pointer: fine) {
+  .numberCell.editable:hover {
+    background: #e7f5ff;
+    border-color: #339af0;
+    color: #1864ab;
+  }
+
+  /* Prevent hover from overriding selected state */
+  .numberCell.editable.selected:hover {
+    background: #339af0;
+    border-color: #1971c2;
+    color: #ffffff;
+  }
+
+  [data-theme="dark"] .numberCell.editable:hover {
+    background: #1e3a5f;
+    border-color: #4dabf7;
+    color: #a5d8ff;
+  }
+
+  [data-theme="dark"] .numberCell.editable.selected:hover {
+    background: #339af0;
+    border-color: #1971c2;
+    color: #ffffff;
+  }
 }
 
-/* Prevent hover from overriding selected state */
-.numberCell.editable.selected:hover {
-  background: #339af0;
-  border-color: #1971c2;
-  color: #ffffff;
-}
+/* Touch devices: Add active state for feedback */
+@media (hover: none) and (pointer: coarse) {
+  .numberCell.editable:active {
+    background: #e7f5ff;
+    border-color: #339af0;
+    color: #1864ab;
+  }
 
-[data-theme="dark"] .numberCell.editable:hover {
-  background: #1e3a5f;
-  border-color: #4dabf7;
-  color: #a5d8ff;
-}
+  .numberCell.editable.selected:active {
+    background: #339af0;
+    border-color: #1971c2;
+    color: #ffffff;
+  }
 
-[data-theme="dark"] .numberCell.editable.selected:hover {
-  background: #339af0;
-  border-color: #1971c2;
-  color: #ffffff;
+  [data-theme="dark"] .numberCell.editable:active {
+    background: #1e3a5f;
+    border-color: #4dabf7;
+    color: #a5d8ff;
+  }
+
+  [data-theme="dark"] .numberCell.editable.selected:active {
+    background: #339af0;
+    border-color: #1971c2;
+    color: #ffffff;
+  }
 }
 
 .numberCell.fixed {
@@ -66,6 +96,37 @@
   border: 2px solid var(--color-border);
   color: var(--color-text);
   cursor: default;
+}
+
+/* Uncertain/maybe cells - pencil mark style */
+.numberCell.uncertain {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #868e96;
+  background: #fff9db;
+  border-style: dashed;
+  border-color: #fab005;
+}
+
+[data-theme="dark"] .numberCell.uncertain {
+  color: #adb5bd;
+  background: #3d3d1f;
+  border-color: #ffd43b;
+}
+
+/* Uncertain + selected combination */
+.numberCell.uncertain.selected {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #ffffff;
+  background: #fab005;
+  border-style: dashed;
+  border-color: #e67700;
+}
+
+[data-theme="dark"] .numberCell.uncertain.selected {
+  background: #e67700;
+  border-color: #ffd43b;
 }
 
 .numberCell.selected {

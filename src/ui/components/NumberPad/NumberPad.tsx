@@ -12,8 +12,13 @@ interface NumberPadProps {
   onSolve?: () => void;
   onSwap?: () => void;
   onHint?: () => void;
+  onUncertain?: () => void;
   disabled: boolean;
   canUndo: boolean;
+  /** Whether the selected cell can be marked as uncertain (has a value) */
+  canToggleUncertain?: boolean;
+  /** Whether the selected cell is currently marked as uncertain */
+  isSelectedCellUncertain?: boolean;
   /** Whether swap mode is currently active */
   swapMode?: boolean;
   /** Whether a first cell is selected in swap mode */
@@ -34,7 +39,7 @@ interface NumberPadProps {
   onUsedNumberClick?: (value: number) => void;
 }
 
-export const NumberPad: React.FC<NumberPadProps> = ({ onNumberClick, onUndo, onSolve, onSwap, onHint, disabled, canUndo, swapMode, swapFirstCellSelected, hasEmptyCells, hintCooldownUntil, score, availableNumbers, usedNumbers, highlightedNumber, onUsedNumberClick }) => {
+export const NumberPad: React.FC<NumberPadProps> = ({ onNumberClick, onUndo, onSolve, onSwap, onHint, onUncertain, disabled, canUndo, canToggleUncertain, isSelectedCellUncertain, swapMode, swapFirstCellSelected, hasEmptyCells, hintCooldownUntil, score, availableNumbers, usedNumbers, highlightedNumber, onUsedNumberClick }) => {
   // Track remaining cooldown in state (updated by interval)
   const [hintCooldownRemaining, setHintCooldownRemaining] = useState(() => {
     if (!hintCooldownUntil) return 0;
@@ -119,6 +124,18 @@ export const NumberPad: React.FC<NumberPadProps> = ({ onNumberClick, onUndo, onS
         >
           ✕
         </button>
+        {onUncertain && (
+          <button
+            className={`${styles.numberButton} ${styles.uncertainButton} ${isSelectedCellUncertain ? styles.uncertainActive : ''}`}
+            onClick={onUncertain}
+            disabled={!canToggleUncertain}
+            type="button"
+            aria-label={isSelectedCellUncertain ? "Mark as certain" : "Mark as uncertain"}
+            title={isSelectedCellUncertain ? "Mark as certain" : "Mark as uncertain (pencil mark)"}
+          >
+            ✏️
+          </button>
+        )}
         <button
           className={`${styles.numberButton} ${styles.undoButton}`}
           onClick={onUndo}
