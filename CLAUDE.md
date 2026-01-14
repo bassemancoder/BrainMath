@@ -1,7 +1,7 @@
 # BrainMath - AI Context
 
 > This file is automatically read by GitHub Copilot at the start of each chat session.
-> Last updated: January 3, 2026
+> Last updated: January 13, 2026
 
 ## Project Overview
 
@@ -50,7 +50,7 @@ src/
 ## Key Domain Concepts
 
 ### Cell Types (src/domain/entities/Cell.ts)
-- `NumberCell` - editable or fixed (`isFixed`), value can be null
+- `NumberCell` - editable or fixed (`isFixed`), value can be null, optional `isUncertain` flag
 - `OperatorCell` - contains Operator (+, -, ×, ÷)
 - `EqualsCell` - the "=" sign
 - `ResultCell` - equation result (always positive, always displayed)
@@ -71,7 +71,8 @@ interface Equation {
 
 ### Grid Structure
 - Sparse 2D array (`cells[row][col]`, null = crossword gap)
-- `GridSize`: 5 (Beginner), 10 (Medium), 15 (Hard), 20 (Advanced), 30 (Expert)
+- `GridSize`: 5 (Quick), 10 (Classic), 15 (Extended), 20 (Challenge), 30 (Marathon)
+- **Default**: Classic (10) + Medium difficulty
 - Contains `equations: Equation[]` array
 
 ### Hash Format
@@ -146,6 +147,15 @@ Intersection points sorted by quadrant population (least populated first). Ensur
 - `headerCollapsed` state in App.tsx
 - Toggle button in Board corner cell (▲/▼ chevrons)
 - Visible on all screen sizes
+
+### 7. Uncertain/Pencil Mark Feature
+- Users can mark cells as "uncertain" with ✏️ button in NumberPad
+- `NumberCell.isUncertain?: boolean` - optional flag
+- Pencil-mark styling: smaller italic font, dashed border, yellow background
+- Auto-cleared when cell value becomes null
+- Swapping cells preserves uncertain flags (follows the number)
+- Undo restores uncertain state automatically (captured in puzzle snapshot)
+- Persisted to localStorage with grid cells
 
 ---
 
