@@ -572,13 +572,22 @@ export function placeVerticalEquationUp(
   newGrid = setCellAt(newGrid, row, startCol, equalsCell);
   row++;
   
-  // Numbers and operators (reversed - last number first, going down to intersection)
+  // For "result at top" equations, we need to evaluate bottom→top (toward result).
+  // So numberCells[0] should be the BOTTOM cell (furthest from result).
+  // We place cells visually from top to bottom, but store them in reverse order.
+  
+  // First, place all cells on the grid in visual order (top to bottom)
+  // We'll collect them in visual order first, then reverse for storage
+  const visualNumberCells: NumberCell[] = [];
+  const visualOperatorCells: OperatorCell[] = [];
+  
+  // Numbers and operators (reversed visual - last calculation number first, going down)
   for (let i = numbers.length - 1; i >= 0; i--) {
     // Operator before number (except for last/bottom number which is at intersection)
     if (i < numbers.length - 1) {
       const opCell = createOperatorCell(row, startCol, operators[i]);
       newGrid = setCellAt(newGrid, row, startCol, opCell);
-      operatorCells.unshift(opCell); // prepend to maintain order
+      visualOperatorCells.push(opCell); // append in visual order (top to bottom)
       row++;
     }
     
@@ -591,8 +600,17 @@ export function placeVerticalEquationUp(
       numCell = createNumberCell(row, startCol, numbers[i], true);
       newGrid = setCellAt(newGrid, row, startCol, numCell);
     }
-    numberCells.unshift(numCell); // prepend to maintain order
+    visualNumberCells.push(numCell); // append in visual order (top to bottom)
     row++;
+  }
+  
+  // Reverse to get calculation order (bottom to top = toward result)
+  // numberCells[0] = bottom cell, numberCells[last] = top cell (near result)
+  for (let i = visualNumberCells.length - 1; i >= 0; i--) {
+    numberCells.push(visualNumberCells[i]);
+  }
+  for (let i = visualOperatorCells.length - 1; i >= 0; i--) {
+    operatorCells.push(visualOperatorCells[i]);
   }
   
   const equation: Equation = {

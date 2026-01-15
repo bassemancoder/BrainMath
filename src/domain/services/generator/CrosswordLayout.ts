@@ -854,12 +854,18 @@ export async function generateCrosswordLayout(
               }
               
               // Create equation entry
-              const numberCells = reversedNumbers.map((val, i) => 
+              // For "result at top" equations, we need to store numberCells and operatorCells
+              // in REVERSE visual order so that evaluation goes bottom→top (toward result).
+              // numberCells[0] should be the BOTTOM cell (furthest from result).
+              const visualNumberCells = reversedNumbers.map((val, i) => 
                 createNumberCell(resultRow + 2 + i * 2, point.col, val, true)
               );
-              const operatorCells = reversedOperators.map((op, i) => 
+              const visualOperatorCells = reversedOperators.map((op, i) => 
                 createOperatorCell(resultRow + 3 + i * 2, point.col, op)
               );
+              // Reverse to get calculation order (bottom to top = toward result)
+              const numberCells = [...visualNumberCells].reverse();
+              const operatorCells = [...visualOperatorCells].reverse();
               const equation = {
                 id: equationId++,
                 direction: 'vertical' as const,
