@@ -42,8 +42,9 @@ export const App: React.FC = () => {
     return getCellAt(state.puzzle.grid, state.selectedCell.row, state.selectedCell.col);
   }, [state.puzzle, state.selectedCell]);
 
-  // Can clear if a cell is selected and it has a value
-  const canClear = selectedCell !== null && selectedCell.type === 'number' && selectedCell.value !== null && !selectedCell.isFixed;
+  // Can clear if a cell is selected and it has a value OR has candidates
+  const canClear = selectedCell !== null && selectedCell.type === 'number' && !selectedCell.isFixed && 
+    (selectedCell.value !== null || (selectedCell.candidates && selectedCell.candidates.length > 0));
 
   const handleShare = async () => {
     const url = actions.getShareableUrl();
@@ -284,10 +285,12 @@ export const App: React.FC = () => {
             onSwap={actions.toggleSwapMode}
             onHint={actions.useHint}
             onUncertain={actions.toggleUncertainMode}
+            onPencil={actions.togglePencilMode}
             disabled={!state.selectedCell && !state.swapMode}
             canUndo={state.undoStack.length > 0}
             canClear={canClear}
             uncertainMode={state.uncertainMode}
+            pencilMode={state.pencilMode}
             swapMode={state.swapMode}
             swapFirstCellSelected={state.swapFirstCell !== null}
             hasEmptyCells={state.availableNumbers.length > 0}

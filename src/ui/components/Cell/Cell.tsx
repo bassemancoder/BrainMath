@@ -45,9 +45,28 @@ const CellComponent: React.FC<CellProps> = ({ cell, isSelected, hasError, isHigh
     }
   }, [onClick, onDoubleClick]);
 
+  // Render candidates (pencil marks) for empty cells - compact comma-separated format
+  const renderCandidates = (candidates: number[]): React.ReactNode => {
+    return (
+      <div className={styles.candidatesCompact}>
+        {candidates.slice(0, 4).join(',')}
+        {candidates.length > 4 && '…'}
+      </div>
+    );
+  };
+
   const getCellContent = (): React.ReactNode => {
     if (isNumberCell(cell)) {
-      return cell.value !== null ? String(cell.value) : '';
+      // If cell has a definite value, show it
+      if (cell.value !== null) {
+        return String(cell.value);
+      }
+      // If cell has candidates (pencil marks), render them
+      if (cell.candidates && cell.candidates.length > 0) {
+        return renderCandidates(cell.candidates);
+      }
+      // Empty cell
+      return '';
     }
     if (isOperatorCell(cell)) {
       // Display / instead of ÷ for better readability on mobile

@@ -114,7 +114,9 @@ export function setNumberValue(grid: Grid, row: number, col: number, value: numb
   
   // Clear isUncertain when cell is cleared (value becomes null)
   const isUncertain = value === null ? false : cell.isUncertain;
-  const newCell: NumberCell = { ...cell, value, isUncertain };
+  // Clear candidates when a definite value is placed
+  const candidates = value !== null ? undefined : cell.candidates;
+  const newCell: NumberCell = { ...cell, value, isUncertain, candidates };
   return setCellAt(grid, row, col, newCell);
 }
 
@@ -143,6 +145,107 @@ export function setNumberUncertain(grid: Grid, row: number, col: number, isUncer
   
   const newCell: NumberCell = { ...cell, isUncertain };
   return setCellAt(grid, row, col, newCell);
+}
+
+// ============================================
+// CANDIDATE/PENCIL MARK FUNCTIONS
+// ============================================
+
+/**
+ * Toggles a candidate number in a cell's pencil marks (returns new grid)
+ * If candidate exists, removes it. If not, adds it.
+ * Only works on cells that don't have a definite value.
+ */
+export function toggleCandidate(grid: Grid, row: number, col: number, candidate: number): Grid {
+  const cell = getCellAt(grid, row, col);
+  if (!cell || !isNumberCell(cell) || cell.value !== null) {
+    return grid;
+  }
+  
+  const currentCandidates = cell.candidates || [];
+  let newCandidates: number[];
+  
+  if (currentCandidates.includes(candidate)) {
+    // Remove the candidate
+    newCandidates = currentCandidates.filter(c => c !== candidate);
+  } else {
+    // Add the candidate
+    newCandidates = [...currentCandidates, candidate].sort((a, b) => a - b);
+  }
+  
+  const newCell: NumberCell = { 
+    ...cell, 
+    candidates: newCandidates.length > 0 ? newCandidates : undefined 
+  };
+  return setCellAt(grid, row, col, newCell);
+}
+
+/**
+ * Sets the candidates for a cell (returns new grid)
+ */
+export function setCandidates(grid: Grid, row: number, col: number, candidates: number[]): Grid {
+  const cell = getCellAt(grid, row, col);
+  if (!cell || !isNumberCell(cell)) {
+    return grid;
+  }
+  
+  const newCell: NumberCell = { 
+    ...cell, 
+    candidates: candidates.length > 0 ? [...candidates].sort((a, b) => a - b) : undefined 
+  };
+  return setCellAt(grid, row, col, newCell);
+}
+
+/**
+ * Clears all candidates from a cell (returns new grid)
+ */
+export function clearCandidates(grid: Grid, row: number, col: number): Grid {
+  const cell = getCellAt(grid, row, col);
+  if (!cell || !isNumberCell(cell)) {
+    return grid;
+  }
+  
+  const newCell: NumberCell = { ...cell, candidates: undefined };
+  return setCellAt(grid, row, col, newCell);
+}
+
+/**
+ * Removes a specific candidate from all related cells in the same equations
+ * Used for auto-clearing when a definite number is placed
+ */
+export function clearCandidateFromRelatedCells(
+  grid: Grid, 
+  row: number, 
+  col: number, 
+  value: number,
+  equations: { numberCells: { row: number; col: number }[] }[]
+): Grid {
+  // Find equations that contain this cell
+  const relatedEquations = equations.filter(eq => 
+    eq.numberCells.some(c => c.row === row && c.col === col)
+  );
+  
+  let newGrid = grid;
+  
+  // For each related equation, clear the placed value from other cells' candidates
+  for (const eq of relatedEquations) {
+    for (const numCell of eq.numberCells) {
+      // Skip the cell where the number was placed
+      if (numCell.row === row && numCell.col === col) continue;
+      
+      const cell = getCellAt(newGrid, numCell.row, numCell.col);
+      if (cell && isNumberCell(cell) && cell.candidates?.includes(value)) {
+        const newCandidates = cell.candidates.filter(c => c !== value);
+        const newCell: NumberCell = { 
+          ...cell, 
+          candidates: newCandidates.length > 0 ? newCandidates : undefined 
+        };
+        newGrid = setCellAt(newGrid, numCell.row, numCell.col, newCell);
+      }
+    }
+  }
+  
+  return newGrid;
 }
 
 /**

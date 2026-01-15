@@ -13,12 +13,15 @@ interface NumberPadProps {
   onSwap?: () => void;
   onHint?: () => void;
   onUncertain?: () => void;
+  onPencil?: () => void;
   disabled: boolean;
   canUndo: boolean;
   /** Whether the selected cell can be cleared (has a value) */
   canClear?: boolean;
   /** Whether uncertain tagging mode is active */
   uncertainMode?: boolean;
+  /** Whether pencil/notepad mode is active */
+  pencilMode?: boolean;
   /** Whether swap mode is currently active */
   swapMode?: boolean;
   /** Whether a first cell is selected in swap mode */
@@ -37,7 +40,7 @@ interface NumberPadProps {
   onUsedNumberClick?: (value: number) => void;
 }
 
-export const NumberPad: React.FC<NumberPadProps> = ({ onNumberClick, onUndo, onSolve, onSwap, onHint, onUncertain, disabled, canUndo, canClear, uncertainMode, swapMode, swapFirstCellSelected, hasEmptyCells, hintCooldownUntil, availableNumbers, usedNumbers, highlightedNumber, onUsedNumberClick }) => {
+export const NumberPad: React.FC<NumberPadProps> = ({ onNumberClick, onUndo, onSolve, onSwap, onHint, onUncertain, onPencil, disabled, canUndo, canClear, uncertainMode, pencilMode, swapMode, swapFirstCellSelected, hasEmptyCells, hintCooldownUntil, availableNumbers, usedNumbers, highlightedNumber, onUsedNumberClick }) => {
   // Track remaining cooldown in state (updated by interval)
   const [hintCooldownRemaining, setHintCooldownRemaining] = useState(() => {
     if (!hintCooldownUntil) return 0;
@@ -130,6 +133,17 @@ export const NumberPad: React.FC<NumberPadProps> = ({ onNumberClick, onUndo, onS
             title={uncertainMode ? "Exit uncertain tagging mode" : "Enter uncertain tagging mode (click cells to toggle)"}
           >
             ✏️
+          </button>
+        )}
+        {onPencil && (
+          <button
+            className={`${styles.numberButton} ${styles.pencilButton} ${pencilMode ? styles.pencilActive : ''}`}
+            onClick={onPencil}
+            type="button"
+            aria-label={pencilMode ? "Exit pencil mode" : "Enter pencil mode"}
+            title={pencilMode ? "Exit pencil mode - numbers will be placed normally" : "Enter pencil mode - add candidate notes to cells"}
+          >
+            📝
           </button>
         )}
         <button

@@ -8,7 +8,7 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
 import type { GridSize, Difficulty, Puzzle } from '@domain/types';
 import { isNumberCell } from '@domain/entities/Cell';
-import { setNumberValue, getMissingNumbers, getCellAt, toggleNumberUncertain, setNumberUncertain } from '@domain/services/GridService';
+import { setNumberValue, getMissingNumbers, getCellAt, toggleNumberUncertain, setNumberUncertain, toggleCandidate, clearCandidates, clearCandidateFromRelatedCells } from '@domain/services/GridService';
 import { getAllEmptyCells } from '@domain/services/SolverService';
 import { validateGrid } from '@domain/services/ValidationService';
 import { createGameAsync, generateNewHash } from '@application/useCases/CreateGameUseCase';
@@ -52,6 +52,7 @@ interface GameContextType {
     handleSwapCellClick: (row: number, col: number) => void;
     toggleUncertainMode: () => void;
     handleUncertainCellClick: (row: number, col: number) => void;
+    togglePencilMode: () => void;
     useHint: () => void;
   };
 }
@@ -400,6 +401,31 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const currentCell = getCellAt(state.puzzle.grid, row, col);
     const currentValue = currentCell && isNumberCell(currentCell) ? currentCell.value : null;
     
+    // PENCIL MODE: Toggle candidate instead of placing number
+    if (state.pencilMode && value !== null && currentValue === null) {
+      // Only allow adding candidates to empty cells
+      const newGrid = toggleCandidate(state.puzzle.grid, row, col, value);
+      const newPuzzle: Puzzle = {
+        ...state.puzzle,
+        grid: newGrid,
+      };
+      // Use UPDATE_PUZZLE (not with undo) for pencil marks to avoid cluttering undo stack
+      dispatch({ type: 'UPDATE_PUZZLE', puzzle: newPuzzle });
+      return;
+    }
+    
+    // CLEAR: If clearing (value is null), also clear any candidates
+    if (value === null && currentValue === null && currentCell && isNumberCell(currentCell) && currentCell.candidates?.length) {
+      // Cell has candidates but no value - clear the candidates
+      const newGrid = clearCandidates(state.puzzle.grid, row, col);
+      const newPuzzle: Puzzle = {
+        ...state.puzzle,
+        grid: newGrid,
+      };
+      dispatch({ type: 'UPDATE_PUZZLE', puzzle: newPuzzle });
+      return;
+    }
+    
     // If we're placing a number, check if it's available
     if (value !== null && !state.availableNumbers.includes(value)) {
       return; // Number not available, don't allow placing
@@ -410,6 +436,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // If in uncertain mode and placing a number, mark it as uncertain
     if (state.uncertainMode && value !== null) {
       newGrid = setNumberUncertain(newGrid, row, col, true);
+    }
+    
+    // Auto-clear this value from candidates in related cells
+    if (value !== null) {
+      newGrid = clearCandidateFromRelatedCells(
+        newGrid, 
+        row, 
+        col, 
+        value, 
+        state.puzzle.solution.equations
+      );
     }
 
     // Validate the new grid
@@ -464,7 +501,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'CLEAR_JUST_PLACED_CELL' });
       }, 2000);
     }
-  }, [state.puzzle, state.selectedCell, state.availableNumbers, state.usedNumbers, state.uncertainMode]);
+  }, [state.puzzle, state.selectedCell, state.availableNumbers, state.usedNumbers, state.uncertainMode, state.pencilMode]);
 
   const clearCell = useCallback((row: number, col: number) => {
     if (!state.puzzle) return;
@@ -760,6 +797,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'TOGGLE_UNCERTAIN_MODE' });
   }, []);
 
+  // Toggle pencil/notepad mode (add candidates instead of placing numbers)
+  const togglePencilMode = useCallback(() => {
+    dispatch({ type: 'TOGGLE_PENCIL_MODE' });
+  }, []);
+
   // Handle cell click in uncertain mode - toggle uncertain state on clicked cell, or select empty cell for input
   const handleUncertainCellClick = useCallback((row: number, col: number) => {
     if (!state.puzzle || !state.uncertainMode) return;
@@ -976,6 +1018,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       handleSwapCellClick,
       toggleUncertainMode,
       handleUncertainCellClick,
+      togglePencilMode,
       useHint,
     },
   };

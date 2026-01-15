@@ -31,6 +31,8 @@ export interface GameState {
   swapFirstCell: { row: number; col: number } | null;
   /** Whether uncertain tagging mode is active */
   uncertainMode: boolean;
+  /** Whether pencil/notepad mode is active (adds candidates instead of placing numbers) */
+  pencilMode: boolean;
   errors: CellError[];
   timer: number;
   isTimerRunning: boolean;
@@ -75,6 +77,7 @@ export const initialGameState: GameState = {
   swapMode: false,
   swapFirstCell: null,
   uncertainMode: false,
+  pencilMode: false,
   errors: [],
   timer: Defaults.TIMER_VALUE,
   isTimerRunning: false,
@@ -134,6 +137,8 @@ export type GameAction =
   | { type: 'TOGGLE_CELL_UNCERTAIN'; puzzle: Puzzle }
   | { type: 'TOGGLE_UNCERTAIN_MODE' }
   | { type: 'EXIT_UNCERTAIN_MODE' }
+  | { type: 'TOGGLE_PENCIL_MODE' }
+  | { type: 'EXIT_PENCIL_MODE' }
   | { type: 'CLEAR_SWAP_MODE' }
   | { type: 'SHOW_SETTINGS' }
   | { type: 'HIDE_SETTINGS' }
@@ -171,6 +176,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         swapMode: false,
         swapFirstCell: null,
         uncertainMode: false,
+        pencilMode: false,
         errors: [],
         timer: 0,
         isTimerRunning: true,
@@ -205,6 +211,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         swapMode: false,
         swapFirstCell: null,
         uncertainMode: false,
+        pencilMode: false,
         errors: [],
         timer: action.timer,
         isTimerRunning: true,
@@ -480,6 +487,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         uncertainMode: !state.uncertainMode,
+        pencilMode: false, // Exit pencil mode when entering uncertain mode
         swapMode: false, // Exit swap mode when entering uncertain mode
         swapFirstCell: null,
         highlightedNumber: null,
@@ -490,6 +498,22 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         uncertainMode: false,
+      };
+
+    case 'TOGGLE_PENCIL_MODE':
+      return {
+        ...state,
+        pencilMode: !state.pencilMode,
+        uncertainMode: false, // Exit uncertain mode when entering pencil mode
+        swapMode: false, // Exit swap mode when entering pencil mode
+        swapFirstCell: null,
+        highlightedNumber: null,
+      };
+
+    case 'EXIT_PENCIL_MODE':
+      return {
+        ...state,
+        pencilMode: false,
       };
 
     case 'SHOW_SETTINGS':

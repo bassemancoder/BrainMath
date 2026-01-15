@@ -64,6 +64,19 @@ export const Help: React.FC<HelpProps> = ({ onClose }) => {
             <li>Double-click a cell to clear it</li>
             <li>Use the undo button (↩) to revert mistakes</li>
             <li>Use the swap button (⇄) to swap two cells' values</li>
+            <li>Use pencil mode (📝) to note multiple candidate numbers in a cell</li>
+          </ul>
+        </section>
+
+        <section className={styles.section}>
+          <h3>📝 Pencil Mode</h3>
+          <p>Click the pencil button (📝) to enter pencil mode, then:</p>
+          <ul>
+            <li>Select an empty cell and click numbers to add/remove candidates</li>
+            <li>Candidates show as small notes inside the cell</li>
+            <li>Click the clear button (✕) to remove all candidates from a cell</li>
+            <li>When you place a number, it auto-clears from candidates in related cells</li>
+            <li>Click the pencil button again to exit and place numbers normally</li>
           </ul>
         </section>
 
@@ -95,7 +108,11 @@ export const Help: React.FC<HelpProps> = ({ onClose }) => {
             </div>
             <div className={styles.controlItem}>
               <span className={styles.controlIcon}>✏️</span>
-              <span className={styles.controlLabel}><strong>Uncertain</strong> — Mark a cell as "maybe" (pencil mark style)</span>
+              <span className={styles.controlLabel}><strong>Uncertain</strong> — Mark a cell as "maybe" (dashed style)</span>
+            </div>
+            <div className={styles.controlItem}>
+              <span className={styles.controlIcon}>📝</span>
+              <span className={styles.controlLabel}><strong>Pencil</strong> — Toggle pencil mode to add candidate notes</span>
             </div>
             <div className={styles.controlItem}>
               <span className={styles.controlIcon}>↩</span>
