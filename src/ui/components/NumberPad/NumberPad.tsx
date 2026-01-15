@@ -15,10 +15,10 @@ interface NumberPadProps {
   onUncertain?: () => void;
   disabled: boolean;
   canUndo: boolean;
-  /** Whether the selected cell can be marked as uncertain (has a value) */
-  canToggleUncertain?: boolean;
-  /** Whether the selected cell is currently marked as uncertain */
-  isSelectedCellUncertain?: boolean;
+  /** Whether the selected cell can be cleared (has a value) */
+  canClear?: boolean;
+  /** Whether uncertain tagging mode is active */
+  uncertainMode?: boolean;
   /** Whether swap mode is currently active */
   swapMode?: boolean;
   /** Whether a first cell is selected in swap mode */
@@ -27,8 +27,6 @@ interface NumberPadProps {
   hasEmptyCells?: boolean;
   /** Timestamp when hint cooldown expires */
   hintCooldownUntil?: number | null;
-  /** Current score */
-  score?: number;
   /** Available numbers that can be placed (includes duplicates) */
   availableNumbers: number[];
   /** Numbers that have been placed on the board */
@@ -39,7 +37,7 @@ interface NumberPadProps {
   onUsedNumberClick?: (value: number) => void;
 }
 
-export const NumberPad: React.FC<NumberPadProps> = ({ onNumberClick, onUndo, onSolve, onSwap, onHint, onUncertain, disabled, canUndo, canToggleUncertain, isSelectedCellUncertain, swapMode, swapFirstCellSelected, hasEmptyCells, hintCooldownUntil, score, availableNumbers, usedNumbers, highlightedNumber, onUsedNumberClick }) => {
+export const NumberPad: React.FC<NumberPadProps> = ({ onNumberClick, onUndo, onSolve, onSwap, onHint, onUncertain, disabled, canUndo, canClear, uncertainMode, swapMode, swapFirstCellSelected, hasEmptyCells, hintCooldownUntil, availableNumbers, usedNumbers, highlightedNumber, onUsedNumberClick }) => {
   // Track remaining cooldown in state (updated by interval)
   const [hintCooldownRemaining, setHintCooldownRemaining] = useState(() => {
     if (!hintCooldownUntil) return 0;
@@ -113,12 +111,11 @@ export const NumberPad: React.FC<NumberPadProps> = ({ onNumberClick, onUndo, onS
       
       {/* Row 2: Action buttons */}
       <div className={styles.row}>
-        <span className={styles.scoreText} title="Current score">{score ?? 0}</span>
         <span className={styles.progressText} title="Progress">{progressPercent}%</span>
         <button
           className={`${styles.numberButton} ${styles.clearButton}`}
           onClick={() => onNumberClick(null)}
-          disabled={disabled}
+          disabled={!canClear}
           type="button"
           aria-label="Clear"
         >
@@ -126,12 +123,11 @@ export const NumberPad: React.FC<NumberPadProps> = ({ onNumberClick, onUndo, onS
         </button>
         {onUncertain && (
           <button
-            className={`${styles.numberButton} ${styles.uncertainButton} ${isSelectedCellUncertain ? styles.uncertainActive : ''}`}
+            className={`${styles.numberButton} ${styles.uncertainButton} ${uncertainMode ? styles.uncertainActive : ''}`}
             onClick={onUncertain}
-            disabled={!canToggleUncertain}
             type="button"
-            aria-label={isSelectedCellUncertain ? "Mark as certain" : "Mark as uncertain"}
-            title={isSelectedCellUncertain ? "Mark as certain" : "Mark as uncertain (pencil mark)"}
+            aria-label={uncertainMode ? "Exit uncertain tagging mode" : "Enter uncertain tagging mode"}
+            title={uncertainMode ? "Exit uncertain tagging mode" : "Enter uncertain tagging mode (click cells to toggle)"}
           >
             ✏️
           </button>

@@ -36,11 +36,14 @@ export const App: React.FC = () => {
     );
   }, [state.initialScore, state.timer, state.wrongAttemptCount, state.hintCount]);
 
-  // Get the currently selected cell (for uncertain button state)
+  // Get the currently selected cell (for clear button state)
   const selectedCell = useMemo(() => {
     if (!state.puzzle || !state.selectedCell) return null;
     return getCellAt(state.puzzle.grid, state.selectedCell.row, state.selectedCell.col);
   }, [state.puzzle, state.selectedCell]);
+
+  // Can clear if a cell is selected and it has a value
+  const canClear = selectedCell !== null && selectedCell.type === 'number' && selectedCell.value !== null && !selectedCell.isFixed;
 
   const handleShare = async () => {
     const url = actions.getShareableUrl();
@@ -249,9 +252,21 @@ export const App: React.FC = () => {
             hintedCell={state.hintedCell}
             errorHintCell={state.errorHintCell}
             justPlacedCell={state.justPlacedCell}
-            onCellClick={state.swapMode ? actions.handleSwapCellClick : actions.selectCell}
-            onCellDoubleClick={state.swapMode ? undefined : actions.clearCell}
-            onDeselect={state.swapMode ? () => actions.toggleSwapMode() : actions.deselectCell}
+            onCellClick={
+              state.swapMode 
+                ? actions.handleSwapCellClick 
+                : state.uncertainMode 
+                  ? actions.handleUncertainCellClick 
+                  : actions.selectCell
+            }
+            onCellDoubleClick={state.swapMode || state.uncertainMode ? undefined : actions.clearCell}
+            onDeselect={
+              state.swapMode 
+                ? () => actions.toggleSwapMode() 
+                : state.uncertainMode 
+                  ? () => actions.toggleUncertainMode() 
+                  : actions.deselectCell
+            }
             headerCollapsed={headerCollapsed}
             onToggleHeader={() => setHeaderCollapsed(!headerCollapsed)}
           />
@@ -268,16 +283,15 @@ export const App: React.FC = () => {
             }
             onSwap={actions.toggleSwapMode}
             onHint={actions.useHint}
-            onUncertain={actions.toggleUncertain}
+            onUncertain={actions.toggleUncertainMode}
             disabled={!state.selectedCell && !state.swapMode}
             canUndo={state.undoStack.length > 0}
-            canToggleUncertain={selectedCell !== null && selectedCell.type === 'number' && selectedCell.value !== null && !selectedCell.isFixed}
-            isSelectedCellUncertain={selectedCell !== null && selectedCell.type === 'number' && selectedCell.isUncertain === true}
+            canClear={canClear}
+            uncertainMode={state.uncertainMode}
             swapMode={state.swapMode}
             swapFirstCellSelected={state.swapFirstCell !== null}
             hasEmptyCells={state.availableNumbers.length > 0}
             hintCooldownUntil={state.hintCooldownUntil}
-            score={score}
             availableNumbers={state.availableNumbers}
             usedNumbers={state.usedNumbers}
             highlightedNumber={state.highlightedNumber}

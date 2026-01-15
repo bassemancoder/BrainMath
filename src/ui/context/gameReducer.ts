@@ -29,6 +29,8 @@ export interface GameState {
   swapMode: boolean;
   /** First cell selected for swap operation */
   swapFirstCell: { row: number; col: number } | null;
+  /** Whether uncertain tagging mode is active */
+  uncertainMode: boolean;
   errors: CellError[];
   timer: number;
   isTimerRunning: boolean;
@@ -72,6 +74,7 @@ export const initialGameState: GameState = {
   highlightedNumber: null,
   swapMode: false,
   swapFirstCell: null,
+  uncertainMode: false,
   errors: [],
   timer: Defaults.TIMER_VALUE,
   isTimerRunning: false,
@@ -129,6 +132,8 @@ export type GameAction =
   | { type: 'TOGGLE_SWAP_MODE' }
   | { type: 'SET_SWAP_FIRST_CELL'; row: number; col: number }
   | { type: 'TOGGLE_CELL_UNCERTAIN'; puzzle: Puzzle }
+  | { type: 'TOGGLE_UNCERTAIN_MODE' }
+  | { type: 'EXIT_UNCERTAIN_MODE' }
   | { type: 'CLEAR_SWAP_MODE' }
   | { type: 'SHOW_SETTINGS' }
   | { type: 'HIDE_SETTINGS' }
@@ -165,6 +170,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         highlightedNumber: null,
         swapMode: false,
         swapFirstCell: null,
+        uncertainMode: false,
         errors: [],
         timer: 0,
         isTimerRunning: true,
@@ -198,6 +204,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         highlightedNumber: null,
         swapMode: false,
         swapFirstCell: null,
+        uncertainMode: false,
         errors: [],
         timer: action.timer,
         isTimerRunning: true,
@@ -294,6 +301,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         errors: [],
         selectedCell: lastState.cell,
         undoCount: state.undoCount + 1,
+        uncertainMode: false, // Exit uncertain mode when undoing
         hintedCell: null, // Clear hint highlight when undoing
         errorHintCell: null, // Clear error hint highlight when undoing
       };
@@ -444,6 +452,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         swapMode: !state.swapMode,
         swapFirstCell: null,
+        uncertainMode: false, // Exit uncertain mode when entering swap mode
         highlightedNumber: null, // Clear highlight when entering swap mode
         selectedCell: null, // Clear selection when toggling swap mode
       };
@@ -465,6 +474,22 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         puzzle: action.puzzle,
+      };
+
+    case 'TOGGLE_UNCERTAIN_MODE':
+      return {
+        ...state,
+        uncertainMode: !state.uncertainMode,
+        swapMode: false, // Exit swap mode when entering uncertain mode
+        swapFirstCell: null,
+        highlightedNumber: null,
+        selectedCell: null,
+      };
+
+    case 'EXIT_UNCERTAIN_MODE':
+      return {
+        ...state,
+        uncertainMode: false,
       };
 
     case 'SHOW_SETTINGS':

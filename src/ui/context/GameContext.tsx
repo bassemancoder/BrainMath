@@ -50,7 +50,8 @@ interface GameContextType {
     setHighlightedNumber: (value: number | null) => void;
     toggleSwapMode: () => void;
     handleSwapCellClick: (row: number, col: number) => void;
-    toggleUncertain: () => void;
+    toggleUncertainMode: () => void;
+    handleUncertainCellClick: (row: number, col: number) => void;
     useHint: () => void;
   };
 }
@@ -404,7 +405,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       return; // Number not available, don't allow placing
     }
     
-    const newGrid = setNumberValue(state.puzzle.grid, row, col, value);
+    let newGrid = setNumberValue(state.puzzle.grid, row, col, value);
+
+    // If in uncertain mode and placing a number, mark it as uncertain
+    if (state.uncertainMode && value !== null) {
+      newGrid = setNumberUncertain(newGrid, row, col, true);
+    }
 
     // Validate the new grid
     const validation = validateGrid(newGrid);
@@ -458,10 +464,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'CLEAR_JUST_PLACED_CELL' });
       }, 2000);
     }
-  }, [state.puzzle, state.selectedCell, state.availableNumbers, state.usedNumbers]);
+  }, [state.puzzle, state.selectedCell, state.availableNumbers, state.usedNumbers, state.uncertainMode]);
 
   const clearCell = useCallback((row: number, col: number) => {
     if (!state.puzzle) return;
+    
+    // Exit uncertain mode when clearing a cell
+    dispatch({ type: 'EXIT_UNCERTAIN_MODE' });
     
     // Get the current value in the cell
     const currentCell = getCellAt(state.puzzle.grid, row, col);
@@ -746,17 +755,36 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'TOGGLE_SWAP_MODE' });
   }, []);
 
-  // Toggle uncertain/maybe flag on the selected cell
-  const toggleUncertain = useCallback(() => {
-    if (!state.puzzle || !state.selectedCell) return;
+  // Toggle uncertain tagging mode (enter/exit mode)
+  const toggleUncertainMode = useCallback(() => {
+    dispatch({ type: 'TOGGLE_UNCERTAIN_MODE' });
+  }, []);
+
+  // Handle cell click in uncertain mode - toggle uncertain state on clicked cell, or select empty cell for input
+  const handleUncertainCellClick = useCallback((row: number, col: number) => {
+    if (!state.puzzle || !state.uncertainMode) return;
+
+    const cell = state.puzzle.grid.cells[row]?.[col];
     
-    const cell = getCellAt(state.puzzle.grid, state.selectedCell.row, state.selectedCell.col);
-    if (!cell || !isNumberCell(cell) || cell.value === null) return;
-    
-    const newGrid = toggleNumberUncertain(state.puzzle.grid, state.selectedCell.row, state.selectedCell.col);
-    const newPuzzle: Puzzle = { ...state.puzzle, grid: newGrid };
-    dispatch({ type: 'TOGGLE_CELL_UNCERTAIN', puzzle: newPuzzle });
-  }, [state.puzzle, state.selectedCell]);
+    // Skip if cell is null, not a number cell, or fixed
+    if (!cell || !isNumberCell(cell) || cell.isFixed) {
+      return;
+    }
+
+    // If cell has a value, toggle its uncertain state
+    if (cell.value !== null) {
+      const newGrid = toggleNumberUncertain(state.puzzle.grid, row, col);
+      const newPuzzle: Puzzle = { ...state.puzzle, grid: newGrid };
+      dispatch({ type: 'TOGGLE_CELL_UNCERTAIN', puzzle: newPuzzle });
+    } else {
+      // If cell is empty, select it for number input (toggle selection)
+      if (state.selectedCell?.row === row && state.selectedCell?.col === col) {
+        dispatch({ type: 'DESELECT_CELL' });
+      } else {
+        dispatch({ type: 'SELECT_CELL', row, col });
+      }
+    }
+  }, [state.puzzle, state.uncertainMode, state.selectedCell]);
 
   // Get a random hint and place it
   const useHint = useCallback(() => {
@@ -946,7 +974,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       setHighlightedNumber,
       toggleSwapMode,
       handleSwapCellClick,
-      toggleUncertain,
+      toggleUncertainMode,
+      handleUncertainCellClick,
       useHint,
     },
   };
