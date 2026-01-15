@@ -203,29 +203,48 @@
   font-size: 1rem;
 }
 
-.uncertainButton:hover:not(:disabled) {
-  background: #fff3bf;
-  border-color: #fab005;
-  color: #e67700;
+/* Only apply hover on devices that support hover (not touch) */
+@media (hover: hover) and (pointer: fine) {
+  .uncertainButton:hover:not(:disabled):not(.uncertainActive) {
+    background: #fff3bf;
+    border-color: #fab005;
+    color: #e67700;
+  }
+
+  [data-theme="dark"] .uncertainButton:hover:not(:disabled):not(.uncertainActive) {
+    background: #5c4d1f;
+    border-color: #ffd43b;
+    color: #ffe066;
+  }
 }
 
-[data-theme="dark"] .uncertainButton:hover:not(:disabled) {
-  background: #5c4d1f;
-  border-color: #ffd43b;
-  color: #ffe066;
-}
-
-/* Uncertain mode active (cell is marked uncertain) */
+/* Uncertain mode active (mode is enabled) - more saturated/distinctive than hover */
 .uncertainButton.uncertainActive {
-  background: #fff3bf;
-  border-color: #fab005;
-  color: #e67700;
+  background: #fab005;
+  border-color: #e67700;
+  color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(250, 176, 5, 0.4);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .uncertainButton.uncertainActive:hover {
+    background: #f59f00;
+    border-color: #e67700;
+    color: #ffffff;
+  }
 }
 
 [data-theme="dark"] .uncertainButton.uncertainActive {
-  background: #5c4d1f;
+  background: #fab005;
   border-color: #ffd43b;
-  color: #ffe066;
+  color: #1a1a1a;
+  box-shadow: 0 0 0 2px rgba(250, 176, 5, 0.4);
+}
+
+[data-theme="dark"] .uncertainButton.uncertainActive:hover {
+  background: #f59f00;
+  border-color: #ffd43b;
+  color: #1a1a1a;
 }
 
 /* Hint button - teal/green theme */
