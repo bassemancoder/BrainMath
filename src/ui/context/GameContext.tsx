@@ -320,82 +320,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'DESELECT_CELL' });
   }, []);
 
-  const placeNumber = useCallback((value: number | null) => {
-    // Cheat code: 5 clear (X) clicks within 1 second reveals solution
-    if (value === null && state.puzzle) {
-      const now = Date.now();
-      clearClicksRef.current.push(now);
-      
-      // Keep only clicks from the last second
-      clearClicksRef.current = clearClicksRef.current.filter(t => now - t < Timing.CHEAT_CODE_WINDOW_MS);
-      
-      if (clearClicksRef.current.length >= Timing.CHEAT_CODE_CLICK_COUNT) {
-        clearClicksRef.current = []; // Reset to prevent repeated triggers
-        
-        // Log the solution in a user-friendly grid format
-        console.log('\n\ud83d\udd13 SOLUTION REVEALED \ud83d\udd13');
-        console.log('========================\n');
-        
-        const solution = state.puzzle.solution;
-        const grid = state.puzzle.grid;
-        
-        // Find grid bounds
-        let minRow = grid.height, maxRow = 0, minCol = grid.width, maxCol = 0;
-        for (let row = 0; row < grid.height; row++) {
-          for (let col = 0; col < grid.width; col++) {
-            if (grid.cells[row]?.[col] !== null) {
-              minRow = Math.min(minRow, row);
-              maxRow = Math.max(maxRow, row);
-              minCol = Math.min(minCol, col);
-              maxCol = Math.max(maxCol, col);
-            }
-          }
-        }
-        
-        // Build readable grid with coordinates
-        const colHeaders = '     ' + Array.from({ length: maxCol - minCol + 1 })
-          .map((_, i) => `H${(i + 1).toString().padStart(2, ' ')}`)
-          .join(' ');
-        console.log(colHeaders);
-        console.log('     ' + '-'.repeat((maxCol - minCol + 1) * 4));
-        
-        for (let row = minRow; row <= maxRow; row++) {
-          const rowLabel = `V${(row - minRow + 1).toString().padStart(2, ' ')} |`;
-          const rowCells: string[] = [];
-          
-          for (let col = minCol; col <= maxCol; col++) {
-            const cell = grid.cells[row]?.[col];
-            if (cell === null) {
-              rowCells.push('   ');
-            } else if (cell.type === 'number') {
-              // Get value from solution grid
-              const solCell = solution.cells[row]?.[col];
-              if (solCell && solCell.type === 'number' && solCell.value !== null) {
-                rowCells.push(solCell.value.toString().padStart(3, ' '));
-              } else {
-                rowCells.push('  ?');
-              }
-            } else if (cell.type === 'operator') {
-              rowCells.push(`  ${cell.value}`);
-            } else if (cell.type === 'equals') {
-              rowCells.push('  =');
-            } else if (cell.type === 'result') {
-              rowCells.push(cell.value.toString().padStart(3, ' '));
-            } else {
-              rowCells.push('   ');
-            }
-          }
-          
-          console.log(rowLabel + rowCells.join(' '));
-        }
-        
-        console.log('\n========================');
-      }
-    }
-
-    if (!state.puzzle || !state.selectedCell) return;
-
-    const { row, col } = state.selectedCell;
+  // Internal helper function that handles placing/clearing a number at a specific cell
+  // This is used by both placeNumber (via selectedCell) and clearCell (via direct row/col)
+  const placeNumberAtCell = useCallback((row: number, col: number, value: number | null) => {
+    if (!state.puzzle) return;
     
     // Get the current value in the cell before placing the new one
     const currentCell = getCellAt(state.puzzle.grid, row, col);
@@ -501,46 +429,105 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'CLEAR_JUST_PLACED_CELL' });
       }, 2000);
     }
-  }, [state.puzzle, state.selectedCell, state.availableNumbers, state.usedNumbers, state.uncertainMode, state.pencilMode]);
+  }, [state.puzzle, state.availableNumbers, state.usedNumbers, state.uncertainMode, state.pencilMode]);
+
+  const placeNumber = useCallback((value: number | null) => {
+    // Cheat code: 5 clear (X) clicks within 1 second reveals solution
+    if (value === null && state.puzzle) {
+      const now = Date.now();
+      clearClicksRef.current.push(now);
+      
+      // Keep only clicks from the last second
+      clearClicksRef.current = clearClicksRef.current.filter(t => now - t < Timing.CHEAT_CODE_WINDOW_MS);
+      
+      if (clearClicksRef.current.length >= Timing.CHEAT_CODE_CLICK_COUNT) {
+        clearClicksRef.current = []; // Reset to prevent repeated triggers
+        
+        // Log the solution in a user-friendly grid format
+        console.log('\n\ud83d\udd13 SOLUTION REVEALED \ud83d\udd13');
+        console.log('========================\n');
+        
+        const solution = state.puzzle.solution;
+        const grid = state.puzzle.grid;
+        
+        // Find grid bounds
+        let minRow = grid.height, maxRow = 0, minCol = grid.width, maxCol = 0;
+        for (let row = 0; row < grid.height; row++) {
+          for (let col = 0; col < grid.width; col++) {
+            if (grid.cells[row]?.[col] !== null) {
+              minRow = Math.min(minRow, row);
+              maxRow = Math.max(maxRow, row);
+              minCol = Math.min(minCol, col);
+              maxCol = Math.max(maxCol, col);
+            }
+          }
+        }
+        
+        // Build readable grid with coordinates
+        const colHeaders = '     ' + Array.from({ length: maxCol - minCol + 1 })
+          .map((_, i) => `H${(i + 1).toString().padStart(2, ' ')}`)
+          .join(' ');
+        console.log(colHeaders);
+        console.log('     ' + '-'.repeat((maxCol - minCol + 1) * 4));
+        
+        for (let row = minRow; row <= maxRow; row++) {
+          const rowLabel = `V${(row - minRow + 1).toString().padStart(2, ' ')} |`;
+          const rowCells: string[] = [];
+          
+          for (let col = minCol; col <= maxCol; col++) {
+            const cell = grid.cells[row]?.[col];
+            if (cell === null) {
+              rowCells.push('   ');
+            } else if (cell.type === 'number') {
+              // Get value from solution grid
+              const solCell = solution.cells[row]?.[col];
+              if (solCell && solCell.type === 'number' && solCell.value !== null) {
+                rowCells.push(solCell.value.toString().padStart(3, ' '));
+              } else {
+                rowCells.push('  ?');
+              }
+            } else if (cell.type === 'operator') {
+              rowCells.push(`  ${cell.value}`);
+            } else if (cell.type === 'equals') {
+              rowCells.push('  =');
+            } else if (cell.type === 'result') {
+              rowCells.push(cell.value.toString().padStart(3, ' '));
+            } else {
+              rowCells.push('   ');
+            }
+          }
+          
+          console.log(rowLabel + rowCells.join(' '));
+        }
+        
+        console.log('\n========================');
+      }
+    }
+
+    if (!state.puzzle || !state.selectedCell) return;
+
+    const { row, col } = state.selectedCell;
+    placeNumberAtCell(row, col, value);
+  }, [state.puzzle, state.selectedCell, placeNumberAtCell]);
 
   const clearCell = useCallback((row: number, col: number) => {
     if (!state.puzzle) return;
     
-    // Exit uncertain mode when clearing a cell
-    dispatch({ type: 'EXIT_UNCERTAIN_MODE' });
-    
-    // Get the current value in the cell
+    // Get the current cell
     const currentCell = getCellAt(state.puzzle.grid, row, col);
     if (!currentCell || !isNumberCell(currentCell) || currentCell.isFixed) return;
     
-    const currentValue = currentCell.value;
-    if (currentValue === null) return; // Already empty
+    // Check if cell has anything to clear (value or candidates)
+    const hasValue = currentCell.value !== null;
+    const hasCandidates = currentCell.candidates && currentCell.candidates.length > 0;
+    if (!hasValue && !hasCandidates) return; // Nothing to clear
     
-    // Clear the cell by setting value to null
-    const newGrid = setNumberValue(state.puzzle.grid, row, col, null);
-    
-    // Validate the new grid
-    const validation = validateGrid(newGrid);
-    
-    // Update puzzle with new grid
-    const newPuzzle: Puzzle = {
-      ...state.puzzle,
-      grid: newGrid,
-    };
-    
-    dispatch({ type: 'UPDATE_PUZZLE', puzzle: newPuzzle });
-    dispatch({ type: 'SET_ERRORS', errors: validation.errors });
-    
-    // Return the number to the pool
-    dispatch({ type: 'RETURN_NUMBER', value: currentValue });
-    
-    // Clear any hint highlight since the user is modifying the puzzle
-    dispatch({ type: 'CLEAR_HINT' });
-    dispatch({ type: 'CLEAR_ERROR_HINT' });
-    
-    // Keep the cell selected so user can immediately place a new number
+    // Select the cell so it remains selected after clearing
     dispatch({ type: 'SELECT_CELL', row, col });
-  }, [state.puzzle]);
+    
+    // Use the shared placeNumberAtCell function to clear (same code as delete button)
+    placeNumberAtCell(row, col, null);
+  }, [state.puzzle, placeNumberAtCell]);
 
   const undo = useCallback(() => {
     dispatch({ type: 'UNDO' });
