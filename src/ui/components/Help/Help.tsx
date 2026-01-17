@@ -28,8 +28,9 @@ export const Help: React.FC<HelpProps> = ({ onClose }) => {
           <h3>📐 Rules</h3>
           <ul>
             <li>Each number can only be used once</li>
-            <li>Horizontal: evaluate left → right, result on the right</li>
-            <li>Vertical: evaluate toward the result (top→bottom if result at bottom, bottom→top if result at top)</li>
+            <li>Equations always evaluate <strong>toward the equal sign</strong></li>
+            <li>Horizontal: result can be on the right (left→right) or left (right→left)</li>
+            <li>Vertical: result can be at the bottom (top→bottom) or top (bottom→top)</li>
             <li>Some cells are shared between equations</li>
           </ul>
         </section>
@@ -37,7 +38,7 @@ export const Help: React.FC<HelpProps> = ({ onClose }) => {
         <section className={styles.section}>
           <h3>⚠️ Evaluation Order</h3>
           <p className={styles.important}>
-            Equations are evaluated <strong>strictly left-to-right</strong>, 
+            Equations are evaluated <strong>strictly toward the equal sign</strong>, 
             ignoring standard operator precedence (PEMDAS/BODMAS).
           </p>
           <div className={styles.examples}>
@@ -50,8 +51,8 @@ export const Help: React.FC<HelpProps> = ({ onClose }) => {
               <span className={styles.explanation}>→ (10 − 2) × 3 = 8 × 3 = 24</span>
             </div>
             <div className={styles.example}>
-              <code>8 + 4 / 2 = 6</code>
-              <span className={styles.explanation}>→ (8 + 4) / 2 = 12 / 2 = 6</span>
+              <code>15 = 12 + 7 − 10</code>
+              <span className={styles.explanation}>→ (10 − 7) + 12 = 3 + 12 = 15 (right→left)</span>
             </div>
           </div>
         </section>

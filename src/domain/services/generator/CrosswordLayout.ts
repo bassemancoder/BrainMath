@@ -13,6 +13,7 @@ import { createNumberCell, createOperatorCell, createEqualsCell, createResultCel
 import {
   createEmptyGrid,
   placeHorizontalEquation,
+  placeHorizontalEquationLeft,
   getCellAt,
   setCellAt,
 } from '../GridService';
@@ -202,7 +203,7 @@ export async function generateCrosswordLayout(
     return true;
   };
   
-  // Step 1: Place first horizontal equation at CENTER of grid
+  // Step 1: Place first horizontal equation at CENTER of grid (randomly LTR or RTL)
   {
     const eqSize = pickEquationSize(difficulty, rng.random());
     let eq: { numbers: number[]; operators: Operator[]; result: number } | null = null;
@@ -224,45 +225,92 @@ export async function generateCrosswordLayout(
     // Track equation signature to avoid duplicates
     usedEquationSignatures.add(getEquationSignature(eq.numbers, eq.operators, eq.result));
     
+    // Randomly choose direction: LTR (result on right) or RTL (result on left)
+    const isRTL = rng.random() < 0.5;
+    
     // Calculate equation width and center it
     const eqWidth = eq.numbers.length * 2 + 1;
     const startCol = Math.max(0, centerCol - Math.floor(eqWidth / 2));
     const startRow = centerRow;
     
-    grid = placeHorizontalEquation(
-      grid,
-      equationId++,
-      startRow,
-      startCol,
-      eq.numbers,
-      eq.operators,
-      eq.result
-    );
-    
-    // Update quadrant counts
-    const eqQuadrant = getQuadrant(startRow, startCol + Math.floor(eqWidth / 2), centerRow, centerCol);
-    quadrantCounts[eqQuadrant]++;
-    
-    // Add intersection points for equations in ALL directions (at each number position)
-    for (let i = 0; i < eq.numbers.length; i++) {
-      const col = startCol + i * 2;
+    if (isRTL) {
+      // RTL: result on left - use placeHorizontalEquationLeft
+      // The intersection point for RTL is at the rightmost number position
+      const rightmostCol = startCol + eqWidth - 1; // rightmost position of equation
+      grid = placeHorizontalEquationLeft(
+        grid,
+        equationId++,
+        startRow,
+        rightmostCol,
+        eq.numbers,
+        eq.operators,
+        eq.result
+      );
+      
+      // Update quadrant counts
+      const eqQuadrant = getQuadrant(startRow, startCol, centerRow, centerCol);
+      quadrantCounts[eqQuadrant]++;
+      
+      // For RTL, numbers are placed in reverse visual order (right to left)
+      // numberCells in equation are stored in calculation order (right to left toward result)
+      // But for intersection points, we use the visual positions
+      const resultCol = startCol; // result is at leftmost position for RTL
+      const reversedNumbers = [...eq.numbers].reverse();
+      for (let i = 0; i < reversedNumbers.length; i++) {
+        const col = resultCol + 2 + i * 2; // starts after result and equals
+        intersectionPoints.push({
+          row: startRow, col, value: reversedNumbers[i],
+          canPlaceDown: true, canPlaceUp: true, canPlaceRight: false, canPlaceLeft: false, used: false
+        });
+      }
+      
+      // Track result position - it can START a vertical equation
+      resultCells.push({
+        row: startRow, col: resultCol, value: eq.result, used: false
+      });
+      // Add result as intersection point
       intersectionPoints.push({
-        row: startRow, col, value: eq.numbers[i],
-        canPlaceDown: true, canPlaceUp: true, canPlaceRight: false, canPlaceLeft: false, used: false
+        row: startRow, col: resultCol, value: eq.result,
+        canPlaceDown: true, canPlaceUp: true, canPlaceRight: false, canPlaceLeft: false, used: false,
+        isResultCell: true
+      });
+    } else {
+      // LTR: result on right - use original placeHorizontalEquation
+      grid = placeHorizontalEquation(
+        grid,
+        equationId++,
+        startRow,
+        startCol,
+        eq.numbers,
+        eq.operators,
+        eq.result
+      );
+      
+      // Update quadrant counts
+      const eqQuadrant = getQuadrant(startRow, startCol + Math.floor(eqWidth / 2), centerRow, centerCol);
+      quadrantCounts[eqQuadrant]++;
+      
+      // Add intersection points for equations in ALL directions (at each number position)
+      for (let i = 0; i < eq.numbers.length; i++) {
+        const col = startCol + i * 2;
+        intersectionPoints.push({
+          row: startRow, col, value: eq.numbers[i],
+          canPlaceDown: true, canPlaceUp: true, canPlaceRight: false, canPlaceLeft: false, used: false
+        });
+      }
+      
+      // Track result position - it can START a vertical equation (result becomes input)
+      const resultCol = startCol + eq.numbers.length * 2;
+      resultCells.push({
+        row: startRow, col: resultCol, value: eq.result, used: false
+      });
+      // Add result as intersection point - vertical can START here (going down or up)
+      intersectionPoints.push({
+        row: startRow, col: resultCol, value: eq.result,
+        canPlaceDown: true, canPlaceUp: true, canPlaceRight: false, canPlaceLeft: false, used: false,
+        isResultCell: true
       });
     }
-    
-    // Track result position - it can START a vertical equation (result becomes input)
-    const resultCol = startCol + eq.numbers.length * 2;
-    resultCells.push({
-      row: startRow, col: resultCol, value: eq.result, used: false
-    });
-    // Add result as intersection point - vertical can START here (going down or up)
-    intersectionPoints.push({
-      row: startRow, col: resultCol, value: eq.result,
-      canPlaceDown: true, canPlaceUp: true, canPlaceRight: false, canPlaceLeft: false, used: false,
-      isResultCell: true
-    });
   }
   
   // Step 2: Iteratively add connected equations
@@ -668,6 +716,10 @@ export async function generateCrosswordLayout(
         const targetQ = point.row < centerRow ? 'top-right' : 'bottom-right';
         directionOptions.push({ dir: 'right', targetQuadrant: targetQ });
       }
+      if (point.canPlaceLeft) {
+        const targetQ = point.row < centerRow ? 'top-left' : 'bottom-left';
+        directionOptions.push({ dir: 'left', targetQuadrant: targetQ });
+      }
       
       directionOptions.sort((a, b) => {
         return quadrantCounts[a.targetQuadrant] - quadrantCounts[b.targetQuadrant];
@@ -772,14 +824,14 @@ export async function generateCrosswordLayout(
                   const numRow = startRow + i * 2;
                   intersectionPoints.push({
                     row: numRow, col: point.col, value: vertEq.numbers[i],
-                    canPlaceDown: false, canPlaceUp: false, canPlaceRight: true, canPlaceLeft: false, used: false
+                    canPlaceDown: false, canPlaceUp: false, canPlaceRight: true, canPlaceLeft: true, used: false
                   });
                 }
               }
               resultCells.push({ row: endRow, col: point.col, value: vertEq.result, used: false });
               intersectionPoints.push({
                 row: endRow, col: point.col, value: vertEq.result,
-                canPlaceDown: false, canPlaceUp: false, canPlaceRight: true, canPlaceLeft: false, used: false,
+                canPlaceDown: false, canPlaceUp: false, canPlaceRight: true, canPlaceLeft: true, used: false,
                 isResultCell: true
               });
               
@@ -888,14 +940,14 @@ export async function generateCrosswordLayout(
                 if (numRow !== point.row) {
                   intersectionPoints.push({
                     row: numRow, col: point.col, value: reversedNumbers[i],
-                    canPlaceDown: false, canPlaceUp: false, canPlaceRight: true, canPlaceLeft: false, used: false
+                    canPlaceDown: false, canPlaceUp: false, canPlaceRight: true, canPlaceLeft: true, used: false
                   });
                 }
               }
               resultCells.push({ row: resultRow, col: point.col, value: vertEq.result, used: false });
               intersectionPoints.push({
                 row: resultRow, col: point.col, value: vertEq.result,
-                canPlaceDown: false, canPlaceUp: false, canPlaceRight: true, canPlaceLeft: false, used: false,
+                canPlaceDown: false, canPlaceUp: false, canPlaceRight: true, canPlaceLeft: true, used: false,
                 isResultCell: true
               });
               
@@ -1002,6 +1054,119 @@ export async function generateCrosswordLayout(
               resultCells.push({ row: point.row, col: endCol, value: horizEq.result, used: false });
               intersectionPoints.push({
                 row: point.row, col: endCol, value: horizEq.result,
+                canPlaceDown: true, canPlaceUp: true, canPlaceRight: false, canPlaceLeft: false, used: false,
+                isResultCell: true
+              });
+              
+              placed = true;
+              break;
+            }
+          }
+        }
+        
+        if (dir === 'left') {
+          // For "left" direction, the equation reads left-to-right but result is on the LEFT
+          // Example: "15 = 12 + 7 - 10" where evaluation is right-to-left: 10 - 7 = 3, 3 + 12 = 15
+          // intersection position is from the right (furthest from result), going left toward result
+          const resultCol = point.col - (eqSize - 1 - intersectionPos) * 2 - 2; // -2 for equals+result
+          
+          // Check bounds
+          let canPlace = resultCol >= 0 && point.col + intersectionPos * 2 < width;
+          if (canPlace) {
+            // Check all positions except intersection
+            for (let i = 0; i < eqSize && canPlace; i++) {
+              const numCol = resultCol + 2 + i * 2; // numbers start after result and equals
+              if (i === eqSize - 1 - intersectionPos) continue; // Skip intersection
+              if (getCellAt(grid, point.row, numCol) !== null) canPlace = false;
+            }
+            // Check operator positions
+            for (let i = 0; i < eqSize - 1 && canPlace; i++) {
+              const opCol = resultCol + 3 + i * 2;
+              if (getCellAt(grid, point.row, opCol) !== null) canPlace = false;
+            }
+            // Check result and equals
+            if (canPlace) {
+              if (getCellAt(grid, point.row, resultCol) !== null) canPlace = false;
+              if (getCellAt(grid, point.row, resultCol + 1) !== null) canPlace = false;
+            }
+          }
+          
+          if (canPlace) {
+            const forceMultDiv = shouldForceMultiplyDivide();
+            // Generate equation - but for "left", we reverse the numbers after generation
+            const horizEq = generateEquationWithValueAt(point.value, intersectionPos, eqSize, operators, rng, numRange, forceMultDiv, divisionConstraints);
+            if (horizEq) {
+              // Check for duplicate equation
+              const sig = getEquationSignature(horizEq.numbers, horizEq.operators, horizEq.result);
+              if (usedEquationSignatures.has(sig)) {
+                continue; // Skip duplicate equation
+              }
+              usedEquationSignatures.add(sig);
+              
+              // For left direction, reverse numbers and operators so result is on the left
+              const reversedNumbers = [...horizEq.numbers].reverse();
+              const reversedOperators = [...horizEq.operators].reverse();
+              
+              // Place result and equals at left
+              const resultCellNew = createResultCell(point.row, resultCol, horizEq.result);
+              grid = setCellAt(grid, point.row, resultCol, resultCellNew);
+              grid = setCellAt(grid, point.row, resultCol + 1, createEqualsCell(point.row, resultCol + 1));
+              
+              // Place numbers and operators going right
+              for (let i = 0; i < reversedNumbers.length; i++) {
+                const numCol = resultCol + 2 + i * 2;
+                const existingCell = getCellAt(grid, point.row, numCol);
+                if (!existingCell) {
+                  grid = setCellAt(grid, point.row, numCol, createNumberCell(point.row, numCol, reversedNumbers[i], true));
+                }
+                if (i < reversedOperators.length) {
+                  const opCol = resultCol + 3 + i * 2;
+                  grid = setCellAt(grid, point.row, opCol, createOperatorCell(point.row, opCol, reversedOperators[i]));
+                }
+              }
+              
+              // Create equation entry
+              // For "result at left" equations, we need to store numberCells and operatorCells
+              // in REVERSE visual order so that evaluation goes right→left (toward result).
+              // numberCells[0] should be the RIGHTMOST cell (furthest from result).
+              const visualNumberCells = reversedNumbers.map((val, i) => 
+                createNumberCell(point.row, resultCol + 2 + i * 2, val, true)
+              );
+              const visualOperatorCells = reversedOperators.map((op, i) => 
+                createOperatorCell(point.row, resultCol + 3 + i * 2, op)
+              );
+              // Reverse to get calculation order (right to left = toward result)
+              const numberCells = [...visualNumberCells].reverse();
+              const operatorCells = [...visualOperatorCells].reverse();
+              const equation = {
+                id: equationId++,
+                direction: 'horizontal' as const,
+                numberCells,
+                operatorCells,
+                resultCell: resultCellNew,
+                startRow: point.row,
+                startCol: resultCol,
+              };
+              grid = { ...grid, equations: [...grid.equations, equation] };
+              
+              trackEquationOperators(horizEq.operators);
+              point.used = true;
+              
+              quadrantCounts[getQuadrant(point.row, resultCol, centerRow, centerCol)]++;
+              
+              // Add intersection points for non-intersection cells
+              for (let i = 0; i < reversedNumbers.length; i++) {
+                const numCol = resultCol + 2 + i * 2;
+                if (numCol !== point.col) {
+                  intersectionPoints.push({
+                    row: point.row, col: numCol, value: reversedNumbers[i],
+                    canPlaceDown: true, canPlaceUp: true, canPlaceRight: false, canPlaceLeft: false, used: false
+                  });
+                }
+              }
+              resultCells.push({ row: point.row, col: resultCol, value: horizEq.result, used: false });
+              intersectionPoints.push({
+                row: point.row, col: resultCol, value: horizEq.result,
                 canPlaceDown: true, canPlaceUp: true, canPlaceRight: false, canPlaceLeft: false, used: false,
                 isResultCell: true
               });
