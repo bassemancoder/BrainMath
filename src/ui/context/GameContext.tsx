@@ -8,7 +8,9 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
 import type { GridSize, Difficulty, Puzzle } from '@domain/types';
 import { isNumberCell } from '@domain/entities/Cell';
+import { parseHash } from '@domain/entities/GameHash';
 import { setNumberValue, getMissingNumbers, getCellAt, toggleNumberUncertain, setNumberUncertain, toggleCandidate, clearCandidates, clearCandidateFromRelatedCells } from '@domain/services/GridService';
+import { calculateScore } from '@domain/services/ScoreService';
 import { getAllEmptyCells } from '@domain/services/SolverService';
 import { validateGrid } from '@domain/services/ValidationService';
 import { createGameAsync, generateNewHash } from '@application/useCases/CreateGameUseCase';
@@ -93,12 +95,34 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     lastSavedTimerRef.current = state.timer;
   }, [state.timer]);
 
-  // Clear saved state when game is won
+  // Clear saved state and add to history when game is won
   useEffect(() => {
     if (state.status === 'won' && state.puzzle) {
+      // Calculate final score
+      const finalScore = calculateScore(
+        state.initialScore,
+        state.timer,
+        state.wrongAttemptCount,
+        state.hintCount
+      );
+      
+      // Parse hash to get grid size and difficulty
+      const { size, difficulty } = parseHash(state.puzzle.hash);
+      
+      // Add to history
+      localStorageAdapter.addToHistory({
+        hash: state.puzzle.hash,
+        completedAt: new Date().toISOString(),
+        timeSeconds: state.timer,
+        score: finalScore,
+        gridSize: size,
+        difficulty: difficulty,
+      });
+      
+      // Clear in-progress saved state
       localStorageAdapter.clearGameState(state.puzzle.hash);
     }
-  }, [state.status, state.puzzle]);
+  }, [state.status, state.puzzle, state.initialScore, state.timer, state.wrongAttemptCount, state.hintCount]);
 
   // Debounced auto-save game state on game changes (not every timer tick)
   // Save 2 seconds after last change for better performance

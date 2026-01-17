@@ -3,6 +3,8 @@
  * Allows dependency injection for testability
  */
 
+import type { GridSize, Difficulty } from '@domain/types';
+
 /**
  * Saved game state for resuming after page refresh
  */
@@ -24,6 +26,24 @@ export interface SavedGameState {
   hintCount: number;
   /** Timestamp when saved */
   savedAt: string;
+}
+
+/**
+ * Entry in game history (completed games)
+ */
+export interface GameHistoryEntry {
+  /** Puzzle hash for replay */
+  hash: string;
+  /** ISO timestamp when completed */
+  completedAt: string;
+  /** Time taken in seconds */
+  timeSeconds: number;
+  /** Final score (0-100) */
+  score: number;
+  /** Grid size used */
+  gridSize: GridSize;
+  /** Difficulty level */
+  difficulty: Difficulty;
 }
 
 /**
@@ -49,4 +69,19 @@ export interface StoragePort {
    * Clears all stored data
    */
   clear(): void;
+  
+  /**
+   * Adds a completed game to history
+   */
+  addToHistory(entry: GameHistoryEntry): void;
+  
+  /**
+   * Gets game history (newest first, limited to max entries)
+   */
+  getHistory(): GameHistoryEntry[];
+  
+  /**
+   * Clears game history
+   */
+  clearHistory(): void;
 }

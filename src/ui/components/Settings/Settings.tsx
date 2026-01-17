@@ -10,6 +10,7 @@ import { createGameAsync, generateNewHash, type ProgressCallback } from '@applic
 import { seededRandomAdapter } from '@infrastructure/random/SeededRandom';
 import { useTheme } from '../../hooks/useTheme';
 import { Help } from '../Help/Help';
+import { History } from '../History/History';
 import styles from './Settings.module.css';
 import logo from '../../../assets/logo.png';
 import { version } from '../../../../package.json';
@@ -85,6 +86,9 @@ export const Settings: React.FC<SettingsProps> = ({
   
   // Help modal state
   const [showHelp, setShowHelp] = useState(false);
+  
+  // History modal state
+  const [showHistory, setShowHistory] = useState(false);
 
   const handleHashSubmit = () => {
     const hash = hashInput.trim().toUpperCase();
@@ -192,6 +196,14 @@ export const Settings: React.FC<SettingsProps> = ({
             type="button"
           >
             Read rules
+          </button>
+          {' • '}
+          <button
+            className={styles.rulesLink}
+            onClick={() => setShowHistory(true)}
+            type="button"
+          >
+            History
           </button>
         </p>
 
@@ -374,6 +386,17 @@ export const Settings: React.FC<SettingsProps> = ({
 
         {/* Help Modal */}
         {showHelp && <Help onClose={() => setShowHelp(false)} />}
+        
+        {/* History Modal */}
+        {showHistory && (
+          <History
+            onClose={() => setShowHistory(false)}
+            onReplay={(hash) => {
+              setShowHistory(false);
+              onStart(hash);
+            }}
+          />
+        )}
       </div>
     </div>
   );

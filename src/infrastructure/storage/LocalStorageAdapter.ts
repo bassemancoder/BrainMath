@@ -2,7 +2,7 @@
  * LocalStorageAdapter - Implementation of StoragePort using localStorage
  */
 
-import type { StoragePort, SavedGameState } from '@application/ports/StoragePort';
+import type { StoragePort, SavedGameState, GameHistoryEntry } from '@application/ports/StoragePort';
 import { StorageKeys, StorageExpiry, Storage } from '@domain/constants';
 
 /**
@@ -92,6 +92,39 @@ export const localStorageAdapter: StoragePort = {
       localStorage.removeItem(StorageKeys.GAME_STATES);
     } catch (error) {
       console.error('Failed to clear storage:', error);
+    }
+  },
+  
+  addToHistory(entry: GameHistoryEntry): void {
+    try {
+      const history = this.getHistory();
+      // Add new entry at the beginning (newest first)
+      history.unshift(entry);
+      // Keep only MAX_HISTORY_ENTRIES
+      const trimmed = history.slice(0, Storage.MAX_HISTORY_ENTRIES);
+      localStorage.setItem(StorageKeys.GAME_HISTORY, JSON.stringify(trimmed));
+    } catch (error) {
+      console.error('Failed to add to history:', error);
+    }
+  },
+  
+  getHistory(): GameHistoryEntry[] {
+    try {
+      const stored = localStorage.getItem(StorageKeys.GAME_HISTORY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (error) {
+      console.error('Failed to get history:', error);
+    }
+    return [];
+  },
+  
+  clearHistory(): void {
+    try {
+      localStorage.removeItem(StorageKeys.GAME_HISTORY);
+    } catch (error) {
+      console.error('Failed to clear history:', error);
     }
   },
 };

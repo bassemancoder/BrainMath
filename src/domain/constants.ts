@@ -153,6 +153,8 @@ export const StorageKeys = {
   GAME_STATES: 'brainmath_game_states',
   /** Key for storing theme preference */
   THEME: 'brainmath-theme',
+  /** Key for storing game history (completed games) */
+  GAME_HISTORY: 'brainmath_game_history',
 } as const;
 
 // ============================================
@@ -162,6 +164,8 @@ export const StorageKeys = {
 export const Storage = {
   /** Maximum number of saved in-progress games to keep */
   MAX_SAVED_GAMES: 3,
+  /** Maximum number of completed games to keep in history */
+  MAX_HISTORY_ENTRIES: 10,
 } as const;
 
 // ============================================
