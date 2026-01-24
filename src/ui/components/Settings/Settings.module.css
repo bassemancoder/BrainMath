@@ -162,9 +162,9 @@
 }
 
 .option.selected {
-  background: #e7f5ff;
-  border-color: #339af0;
-  color: #1971c2;
+  background: var(--color-bg-gradient-start);
+  border-color: var(--color-primary);
+  color: var(--color-primary-hover);
 }
 
 [data-theme="dark"] .option.selected {
@@ -204,9 +204,9 @@
 }
 
 .themeOption.selected {
-  background: #e7f5ff;
-  border-color: #339af0;
-  color: #1971c2;
+  background: var(--color-bg-gradient-start);
+  border-color: var(--color-primary);
+  color: var(--color-primary-hover);
 }
 
 [data-theme="dark"] .themeOption.selected {

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BrainMath</string>
+    <string name="title_activity_main">BrainMath</string>
+    <string name="package_name">com.brainmath.app</string>
+    <string name="custom_url_scheme">com.brainmath.app</string>
+</resources>

@@ -15,7 +15,7 @@
 }
 
 .timer.running {
-  background: #e7f5ff;
+  background: var(--color-bg-gradient-start);
 }
 
 [data-theme="dark"] .timer.running {

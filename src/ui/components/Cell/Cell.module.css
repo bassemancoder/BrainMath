@@ -114,14 +114,15 @@
 .numberCell.uncertain.selected {
   font-size: 0.85rem;
   font-style: italic;
-  color: #ffffff;
+  color: #212529;
+  background: #ffe066;
   border-style: dotted;
 }
 
 .numberCell.selected {
-  background: #339af0;
-  border-color: #1971c2;
-  color: #ffffff;
+  background: var(--color-primary);
+  border-color: var(--color-primary-hover);
+  color: #fff;
   animation: selectedGlow 1.2s ease-in-out infinite;
 }
 
@@ -144,8 +145,8 @@
 }
 
 .numberCell.error {
-  background: #fff5f5;
-  border-color: #fa5252;
+  background: var(--color-cell-error);
+  border-color: #e03131;
   animation: shake 0.3s ease;
 }
 
@@ -155,14 +156,14 @@
 }
 
 .numberCell.selected.error {
-  background: #fa5252;
-  border-color: #e03131;
-  color: #ffffff;
+  background: #e03131;
+  border-color: #fa5252;
+  color: #fff;
 }
 
 /* Highlighted cells (when clicking used number in NumberPad) */
 .numberCell.highlighted {
-  background: #fff9db;
+  background: #ffe066;
   border-color: #fab005;
   box-shadow: 0 0 0 2px rgba(250, 176, 5, 0.3);
 }
@@ -198,7 +199,7 @@
 .numberCell.hintTarget {
   background: #d3f9d8;
   border-color: #40c057;
-  color: #1a1a1a;
+  color: #1864ab;
   box-shadow: 0 0 0 3px rgba(64, 192, 87, 0.4);
   animation: hintPulse 1.5s ease-in-out infinite;
 }
@@ -217,7 +218,7 @@
 
 /* Error hint cell (misplaced number detected) */
 .numberCell.errorHint {
-  background: #fff5f5;
+  background: #ffe3e3;
   border-color: #fa5252;
   color: #c92a2a;
   box-shadow: 0 0 0 3px rgba(250, 82, 82, 0.4);

@@ -10,9 +10,16 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run lint && npm run build && npm run test"
+    "check": "npm run lint && npm run build && npm run test",
+    "android": "npm run build && npx cap sync android && npx cap open android",
+    "android:sync": "npm run build && npx cap sync android"
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
+    "@capacitor/haptics": "^6.0.3",
+    "@capacitor/splash-screen": "^6.0.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "seedrandom": "^3.0.5"

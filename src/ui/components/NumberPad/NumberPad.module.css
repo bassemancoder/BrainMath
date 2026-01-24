@@ -78,9 +78,9 @@
 }
 
 .numberButton:hover:not(:disabled) {
-  background: #e7f5ff;
-  border-color: #339af0;
-  color: #1971c2;
+  background: var(--color-bg-gradient-start);
+  border-color: var(--color-primary);
+  color: var(--color-primary-hover);
 }
 
 [data-theme="dark"] .numberButton:hover:not(:disabled) {
@@ -90,9 +90,9 @@
 }
 
 .numberButton:active:not(:disabled) {
-  background: #339af0;
-  border-color: #1971c2;
-  color: #ffffff;
+  background: var(--color-primary);
+  border-color: var(--color-primary-hover);
+  color: #fff;
   transform: scale(0.95);
 }
 
@@ -171,7 +171,7 @@
 
 /* Swap mode active (waiting for first or second cell) */
 .swapButton.swapActive {
-  background: #d0ebff;
+  background: #a5d8ff;
   border-color: #339af0;
   color: #1971c2;
 }
@@ -184,9 +184,9 @@
 
 /* First cell selected, waiting for second */
 .swapButton.swapPending {
-  background: #339af0;
-  border-color: #1971c2;
-  color: #ffffff;
+  background: var(--color-primary);
+  border-color: var(--color-primary-hover);
+  color: #fff;
   animation: pulse 1s ease-in-out infinite;
 }
 

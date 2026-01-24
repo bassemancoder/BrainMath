@@ -19,6 +19,7 @@ import { localStorageAdapter } from '@infrastructure/storage/LocalStorageAdapter
 import { urlHashAdapter } from '@infrastructure/url/UrlHashAdapter';
 import { Timing } from '@domain/constants';
 import { debug } from '@utils/debug';
+import { lightImpact, mediumImpact, heavyImpact, successNotification, warningNotification } from '@utils/haptics';
 import {
   gameReducer,
   initialGameState,
@@ -331,6 +332,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
     // Only allow selecting editable number cells
     if (isNumberCell(cell) && !cell.isFixed) {
+      // Haptic feedback on cell selection
+      lightImpact();
+      
       // Toggle selection if clicking the same cell
       if (state.selectedCell?.row === row && state.selectedCell?.col === col) {
         dispatch({ type: 'DESELECT_CELL' });
@@ -432,15 +436,28 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       newUsedNumbers = [...newUsedNumbers, value].sort((a, b) => a - b);
     }
 
+    // Haptic feedback for number placement/clearing
+    if (value !== null) {
+      mediumImpact();
+    } else {
+      heavyImpact();
+    }
+
     // Use UPDATE_PUZZLE_WITH_UNDO to save state for undo
     dispatch({ type: 'UPDATE_PUZZLE_WITH_UNDO', puzzle: newPuzzle, availableNumbers: newAvailableNumbers, usedNumbers: newUsedNumbers });
     dispatch({ type: 'SET_ERRORS', errors: validation.errors });
+
+    // Haptic warning feedback when errors are detected
+    if (validation.errors.length > 0) {
+      warningNotification();
+    }
 
     // Check for win - puzzle is won when all cells are filled AND all equations are valid
     // We don't require exact match with stored solution since equations can have multiple valid solutions
     // (e.g., 11 + 28 = 28 + 11 due to commutativity)
     if (validation.isComplete && validation.isValid) {
       debug.log('🎉 WIN GAME triggered!');
+      successNotification(); // Haptic success feedback on win
       dispatch({ type: 'WIN_GAME' });
     }
 
@@ -554,6 +571,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [state.puzzle, placeNumberAtCell]);
 
   const undo = useCallback(() => {
+    heavyImpact(); // Haptic feedback for undo
     dispatch({ type: 'UNDO' });
   }, []);
 
