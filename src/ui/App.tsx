@@ -284,7 +284,7 @@ export const App: React.FC = () => {
             }
             onSwap={actions.toggleSwapMode}
             onHint={actions.useHint}
-            onUncertain={undefined}
+            onUncertain={actions.toggleUncertainMode}
             onPencil={actions.togglePencilMode}
             disabled={!state.selectedCell && !state.swapMode}
             canUndo={state.undoStack.length > 0}
