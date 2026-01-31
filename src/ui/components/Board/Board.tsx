@@ -1,13 +1,20 @@
 /**
  * Board Component - Crossword-style game grid display
- * Renders a sparse grid where null cells are empty spaces
+ * 
+ * Renders a sparse grid where null cells are empty spaces.
+ * Supports drag-to-scroll for panning large puzzles.
  */
 
 import React, { useEffect, useRef, useMemo } from 'react';
 import type { Grid, CellError, Cell as CellType } from '@domain/types';
 import { isNumberCell, isOperatorCell, isResultCell, isEqualsCell, isEmptyCell } from '@domain/entities/Cell';
 import { Cell } from '../Cell/Cell';
+import { useBoardDrag } from './useBoardDrag';
 import styles from './Board.module.css';
+
+// ============================================
+// TYPES
+// ============================================
 
 interface BoardProps {
   grid: Grid;
@@ -41,10 +48,34 @@ export const Board: React.FC<BoardProps> = ({
   headerCollapsed,
   onToggleHeader,
 }) => {
-  // Ref for scrolling hinted cell into view
+  // ----------------------------------------
+  // Refs for auto-scrolling
+  // ----------------------------------------
+  
+  /** Ref for scrolling hinted cell into view */
   const hintedCellRef = useRef<HTMLDivElement>(null);
-  // Ref for scrolling first highlighted cell into view
+  /** Ref for scrolling first highlighted cell into view */
   const firstHighlightedRef = useRef<HTMLDivElement>(null);
+
+  // ----------------------------------------
+  // Drag-to-scroll functionality
+  // ----------------------------------------
+  
+  const {
+    containerRef,
+    isDragging,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleMouseLeave,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useBoardDrag();
+
+  // ----------------------------------------
+  // Auto-scroll Effects
+  // ----------------------------------------
 
   // Scroll hinted cell into view when it changes
   useEffect(() => {
@@ -67,6 +98,10 @@ export const Board: React.FC<BoardProps> = ({
       });
     }
   }, [highlightedNumber]);
+
+  // ----------------------------------------
+  // Cell State Helpers
+  // ----------------------------------------
 
   const hasError = (row: number, col: number): boolean => {
     return errors.some(e => e.row === row && e.col === col);
@@ -249,7 +284,17 @@ export const Board: React.FC<BoardProps> = ({
   };
 
   return (
-    <div className={styles.boardContainer}>
+    <div
+      ref={containerRef}
+      className={`${styles.boardContainer} ${isDragging ? styles.dragging : ''}`}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <div
         className={styles.board}
         style={{

@@ -8,6 +8,16 @@
   -webkit-overflow-scrolling: touch;
   padding: 1rem;
   min-height: 0;
+  cursor: grab;
+  user-select: none;
+}
+
+.boardContainer.dragging {
+  cursor: grabbing;
+}
+
+.boardContainer:active {
+  cursor: grabbing;
 }
 
 .board {

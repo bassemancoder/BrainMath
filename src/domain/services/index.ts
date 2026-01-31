@@ -4,6 +4,7 @@
  */
 
 export * from './DifficultySettings';
+export * from './DomainComputation';
 export { applyOperator, evaluateEquation, validateEquation } from './EquationService';
 // GridService has getOperatorsForDifficulty and isGridComplete which conflict with other modules
 export {

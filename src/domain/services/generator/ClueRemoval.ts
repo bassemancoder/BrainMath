@@ -1,7 +1,8 @@
 /**
  * ClueRemoval - Removes clues from completed grids to create puzzles
  * 
- * Ensures the puzzle still has exactly one solution after each removal.
+ * Uses fast constraint propagation (AC-3) for uniqueness verification,
+ * enabling uniqueness checks on large grids without exponential backtracking.
  * Respects difficulty settings for minimum removals and zero-revealed limits.
  */
 
@@ -18,8 +19,10 @@ import {
   getMinRemovalsPerEquation,
   getMaxZeroRevealedEquations,
 } from '../DifficultySettings';
-import { hasUniqueSolutionAsync } from '../SolverService';
-import { Generation } from '@domain/constants';
+import { 
+  hasUniqueSolutionFastAsync,
+  addCluesUntilUnique,
+} from '../ConstraintService';
 
 // ============================================
 // ASYNC HELPERS
@@ -166,7 +169,7 @@ function ensureMinimumBlanksPerEquation(grid: Grid, rng: RandomGenerator): Grid 
 /**
  * Removes clues from a completed grid to create a puzzle (async)
  * Yields to browser periodically to prevent UI blocking on mobile devices
- * Ensures the puzzle still has exactly one solution after each removal
+ * Uses fast constraint propagation for uniqueness verification
  * Guarantees EACH EQUATION has minimum missing numbers based on difficulty
  * Respects the max percentage of equations allowed to have 0 revealed cells
  */
@@ -211,13 +214,8 @@ export async function removeCluesAsync(
   }
   
   // Step 2: Remove additional clues based on difficulty percentage
-  // SKIP this for large puzzles - the hasUniqueSolution check is too slow
+  // Now uses fast constraint propagation - works for ALL grid sizes!
   const allNumberCells = getAllNumberCells(completedGrid);
-  if (allNumberCells.length > Generation.MAX_NUMBER_CELLS_FOR_UNIQUE_CHECK) {
-    // Step 3: Final pass - ensure no equation is fully revealed
-    puzzleGrid = ensureMinimumBlanksPerEquation(puzzleGrid, rng);
-    return puzzleGrid;
-  }
   
   const numberCells = getAllNumberCells(puzzleGrid).filter(c => c.isFixed);
   const positions = numberCells.map(c => ({ row: c.row, col: c.col }));
@@ -245,8 +243,8 @@ export async function removeCluesAsync(
     
     const testGrid = markCellsAsEditable(puzzleGrid, [{ row, col }]);
     
-    // Use async version to prevent blocking
-    if (await hasUniqueSolutionAsync(testGrid)) {
+    // Use fast constraint propagation for uniqueness check
+    if (await hasUniqueSolutionFastAsync(testGrid)) {
       puzzleGrid = testGrid;
       removed++;
     }
@@ -255,5 +253,9 @@ export async function removeCluesAsync(
   // Step 3: Final pass - ensure no equation is fully revealed
   puzzleGrid = ensureMinimumBlanksPerEquation(puzzleGrid, rng);
   
-  return puzzleGrid;
+  // Step 4: Ensure uniqueness by adding strategic clues if needed
+  // This handles edge cases where the puzzle might be ambiguous
+  const { grid: uniqueGrid } = addCluesUntilUnique(puzzleGrid, completedGrid);
+  
+  return uniqueGrid;
 }

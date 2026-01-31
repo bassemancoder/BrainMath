@@ -1,148 +1,20 @@
 /**
  * Game Reducer - Pure reducer function for game state management
- * Easily testable, no side effects
+ * 
+ * Handles all state transitions for the game. This is a pure function
+ * with no side effects, making it easily testable.
  */
 
-import type { Puzzle, CellError, GameStatus, GridSize, Difficulty } from '@domain/types';
-import { Defaults, Undo, Hint, TimeFormat } from '@domain/constants';
+import type { GameState, UndoState } from './gameState';
+import type { GameAction } from './gameActions';
+import { initialGameState } from './gameState';
+import { Undo, Hint, TimeFormat } from '@domain/constants';
 import { countEnterableCells, calculateInitialScore } from '@domain/services';
 
-// ============================================
-// STATE
-// ============================================
-
-/** Single undo state snapshot */
-export interface UndoState {
-  puzzle: Puzzle;
-  availableNumbers: number[];
-  usedNumbers: number[];
-  cell: { row: number; col: number };
-}
-
-export interface GameState {
-  status: GameStatus;
-  puzzle: Puzzle | null;
-  selectedCell: { row: number; col: number } | null;
-  /** Number currently highlighted (when clicking used numbers in NumberPad) */
-  highlightedNumber: number | null;
-  /** Whether swap mode is active */
-  swapMode: boolean;
-  /** First cell selected for swap operation */
-  swapFirstCell: { row: number; col: number } | null;
-  /** Whether uncertain tagging mode is active */
-  uncertainMode: boolean;
-  /** Whether pencil/notepad mode is active (adds candidates instead of placing numbers) */
-  pencilMode: boolean;
-  errors: CellError[];
-  timer: number;
-  isTimerRunning: boolean;
-  showSettings: boolean;
-  /** Whether a puzzle is currently being generated */
-  isGenerating: boolean;
-  /** Progress message during generation */
-  generationMessage: string;
-  /** Available numbers for the number pad - includes duplicates if needed multiple times */
-  availableNumbers: number[];
-  /** Numbers that have been placed (moved from available) */
-  usedNumbers: number[];
-  /** Stack of previous states for unlimited undo (max 50) */
-  undoStack: UndoState[];
-  /** Initial score based on number of enterable cells */
-  initialScore: number;
-  /** Count of failed validation attempts (for score penalty) */
-  wrongAttemptCount: number;
-  /** Count of undo actions used (for score penalty) */
-  undoCount: number;
-  /** Count of hints used (for score penalty) */
-  hintCount: number;
-  /** Cell that was just filled by a hint (for highlighting) */
-  hintedCell: { row: number; col: number } | null;
-  /** Cell that contains a misplaced number (for error highlighting on hint) */
-  errorHintCell: { row: number; col: number } | null;
-  /** Cell that just had a number placed (for fade-out animation) */
-  justPlacedCell: { row: number; col: number } | null;
-  /** Timestamp when hint cooldown expires (30 seconds after using hint) */
-  hintCooldownUntil: number | null;
-  settings: {
-    gridSize: GridSize;
-    difficulty: Difficulty;
-  };
-}
-
-export const initialGameState: GameState = {
-  status: 'idle',
-  puzzle: null,
-  selectedCell: null,
-  highlightedNumber: null,
-  swapMode: false,
-  swapFirstCell: null,
-  uncertainMode: false,
-  pencilMode: false,
-  errors: [],
-  timer: Defaults.TIMER_VALUE,
-  isTimerRunning: false,
-  showSettings: false,
-  isGenerating: false,
-  generationMessage: '',
-  availableNumbers: [],
-  usedNumbers: [],
-  undoStack: [],
-  initialScore: 0,
-  wrongAttemptCount: 0,
-  undoCount: 0,
-  hintCount: 0,
-  hintedCell: null,
-  errorHintCell: null,
-  justPlacedCell: null,
-  hintCooldownUntil: null,
-  settings: {
-    gridSize: Defaults.GRID_SIZE as GridSize,
-    difficulty: Defaults.DIFFICULTY as Difficulty,
-  },
-};
-
-// ============================================
-// ACTIONS
-// ============================================
-
-export type GameAction =
-  | { type: 'START_GENERATING' }
-  | { type: 'GENERATION_PROGRESS'; message: string }
-  | { type: 'START_GAME'; puzzle: Puzzle; availableNumbers: number[] }
-  | { type: 'RESTORE_GAME'; puzzle: Puzzle; availableNumbers: number[]; usedNumbers: number[]; timer: number; wrongAttemptCount: number; undoCount: number; hintCount: number }
-  | { type: 'SELECT_CELL'; row: number; col: number }
-  | { type: 'DESELECT_CELL' }
-  | { type: 'PLACE_NUMBER'; row: number; col: number; value: number | null }
-  | { type: 'UPDATE_PUZZLE_WITH_UNDO'; puzzle: Puzzle; availableNumbers: number[]; usedNumbers: number[] }
-  | { type: 'UPDATE_PUZZLE'; puzzle: Puzzle }
-  | { type: 'UPDATE_PUZZLE_AND_NUMBERS'; puzzle: Puzzle; availableNumbers: number[]; usedNumbers: number[] }
-  | { type: 'SET_ERRORS'; errors: CellError[] }
-  | { type: 'USE_NUMBER'; value: number }
-  | { type: 'RETURN_NUMBER'; value: number }
-  | { type: 'UNDO' }
-  | { type: 'USE_HINT'; row: number; col: number; value: number; puzzle: Puzzle; availableNumbers: number[]; usedNumbers: number[] }
-  | { type: 'CLEAR_HINT' }
-  | { type: 'SHOW_ERROR_HINT'; row: number; col: number }
-  | { type: 'CLEAR_ERROR_HINT' }
-  | { type: 'SET_JUST_PLACED_CELL'; row: number; col: number }
-  | { type: 'CLEAR_JUST_PLACED_CELL' }
-  | { type: 'WIN_GAME' }
-  | { type: 'RESET_GAME' }
-  | { type: 'TICK_TIMER' }
-  | { type: 'PAUSE_TIMER' }
-  | { type: 'RESUME_TIMER' }
-  | { type: 'SET_HIGHLIGHTED_NUMBER'; value: number | null }
-  | { type: 'TOGGLE_SWAP_MODE' }
-  | { type: 'SET_SWAP_FIRST_CELL'; row: number; col: number }
-  | { type: 'TOGGLE_CELL_UNCERTAIN'; puzzle: Puzzle }
-  | { type: 'TOGGLE_UNCERTAIN_MODE' }
-  | { type: 'EXIT_UNCERTAIN_MODE' }
-  | { type: 'TOGGLE_PENCIL_MODE' }
-  | { type: 'EXIT_PENCIL_MODE' }
-  | { type: 'CLEAR_SWAP_MODE' }
-  | { type: 'SHOW_SETTINGS' }
-  | { type: 'HIDE_SETTINGS' }
-  | { type: 'UPDATE_SETTINGS'; gridSize?: GridSize; difficulty?: Difficulty };
+// Re-export types and initial state for backwards compatibility
+export type { GameState, UndoState } from './gameState';
+export type { GameAction } from './gameActions';
+export { initialGameState } from './gameState';
 
 // ============================================
 // REDUCER
