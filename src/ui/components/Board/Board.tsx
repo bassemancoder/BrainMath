@@ -275,9 +275,13 @@ export const Board: React.FC<BoardProps> = ({
         minScale={Zoom.MIN_SCALE}
         maxScale={Zoom.MAX_SCALE}
         centerOnInit={true}
+        limitToBounds={true}
         wheel={{ step: 0.1 }}
         pinch={{ step: 5 }}
         doubleClick={{ disabled: true }}
+        panning={{ velocityDisabled: true }}
+        alignmentAnimation={{ disabled: true }}
+        velocityAnimation={{ disabled: true }}
       >
         <TransformComponent
           wrapperClass={styles.transformWrapper}
