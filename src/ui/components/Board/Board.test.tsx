@@ -166,6 +166,7 @@ describe('Board Component', () => {
       expect(props.minScale).toBe(0.25);
       expect(props.maxScale).toBe(3);
       expect(props.centerOnInit).toBe(true);
+      expect(props.centerZoomedOut).toBe(true);
       expect(props.limitToBounds).toBe(true);
     });
 

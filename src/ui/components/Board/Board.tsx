@@ -5,10 +5,11 @@
  * Supports pinch-to-zoom and pan via react-zoom-pan-pinch library.
  */
 
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import type { Grid, CellError, Cell as CellType } from '@domain/types';
 import { isNumberCell, isOperatorCell, isResultCell, isEqualsCell, isEmptyCell } from '@domain/entities/Cell';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import type { ReactZoomPanPinchRef, ReactZoomPanPinchState } from 'react-zoom-pan-pinch';
 import { Cell } from '../Cell/Cell';
 import { Zoom } from '@domain/constants';
 import styles from './Board.module.css';
@@ -50,13 +51,69 @@ export const Board: React.FC<BoardProps> = ({
   onToggleHeader,
 }) => {
   // ----------------------------------------
-  // Refs for auto-scrolling
+  // Refs
   // ----------------------------------------
 
   /** Ref for scrolling hinted cell into view */
   const hintedCellRef = useRef<HTMLDivElement>(null);
   /** Ref for scrolling first highlighted cell into view */
   const firstHighlightedRef = useRef<HTMLDivElement>(null);
+  /** Ref for transform wrapper to enforce pan bounds */
+  const transformRef = useRef<ReactZoomPanPinchRef>(null);
+
+  // ----------------------------------------
+  // Pan Bounds Enforcement
+  // ----------------------------------------
+
+  /**
+   * Enforces exact pan boundaries - prevents any panning beyond puzzle edges.
+   * Called on every transform change to clamp position values.
+   */
+  const enforcePanBounds = useCallback((ref: ReactZoomPanPinchRef, state: ReactZoomPanPinchState) => {
+    const { positionX, positionY, scale } = state;
+    const wrapper = ref.instance.wrapperComponent;
+    const content = ref.instance.contentComponent;
+
+    if (!wrapper || !content) return;
+
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const contentWidth = content.offsetWidth * scale;
+    const contentHeight = content.offsetHeight * scale;
+
+    // Calculate allowed position ranges
+    // When content is larger than wrapper, allow panning but not beyond edges
+    // When content is smaller than wrapper, center it (no panning allowed)
+    let minX: number, maxX: number, minY: number, maxY: number;
+
+    if (contentWidth <= wrapperRect.width) {
+      // Content fits horizontally - center it
+      const centerX = (wrapperRect.width - contentWidth) / 2;
+      minX = maxX = centerX;
+    } else {
+      // Content wider than wrapper - allow panning
+      minX = wrapperRect.width - contentWidth;
+      maxX = 0;
+    }
+
+    if (contentHeight <= wrapperRect.height) {
+      // Content fits vertically - center it
+      const centerY = (wrapperRect.height - contentHeight) / 2;
+      minY = maxY = centerY;
+    } else {
+      // Content taller than wrapper - allow panning
+      minY = wrapperRect.height - contentHeight;
+      maxY = 0;
+    }
+
+    // Clamp position to bounds
+    const clampedX = Math.min(Math.max(positionX, minX), maxX);
+    const clampedY = Math.min(Math.max(positionY, minY), maxY);
+
+    // Only update if position changed
+    if (clampedX !== positionX || clampedY !== positionY) {
+      ref.setTransform(clampedX, clampedY, scale, 0);
+    }
+  }, []);
 
   // ----------------------------------------
   // Auto-scroll Effects
@@ -271,10 +328,12 @@ export const Board: React.FC<BoardProps> = ({
   return (
     <div className={styles.boardContainer}>
       <TransformWrapper
+        ref={transformRef}
         initialScale={Zoom.DEFAULT_SCALE}
         minScale={Zoom.MIN_SCALE}
         maxScale={Zoom.MAX_SCALE}
         centerOnInit={true}
+        centerZoomedOut={true}
         limitToBounds={true}
         wheel={{ step: 0.1 }}
         pinch={{ step: 5 }}
@@ -282,6 +341,10 @@ export const Board: React.FC<BoardProps> = ({
         panning={{ velocityDisabled: true }}
         alignmentAnimation={{ disabled: true }}
         velocityAnimation={{ disabled: true }}
+        onPanning={(ref) => enforcePanBounds(ref, ref.state)}
+        onPanningStop={(ref) => enforcePanBounds(ref, ref.state)}
+        onZoom={(ref) => enforcePanBounds(ref, ref.state)}
+        onZoomStop={(ref) => enforcePanBounds(ref, ref.state)}
       >
         <TransformComponent
           wrapperClass={styles.transformWrapper}
