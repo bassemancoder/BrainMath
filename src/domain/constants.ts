@@ -193,3 +193,16 @@ export const Score = {
   /** Minimum score floor (score cannot go below this) */
   MIN_SCORE: 0,
 } as const;
+
+// ============================================
+// ZOOM / PINCH GESTURE
+// ============================================
+
+export const Zoom = {
+  /** Minimum zoom level (zoom out limit) */
+  MIN_SCALE: 0.25,
+  /** Maximum zoom level (zoom in limit) */
+  MAX_SCALE: 3,
+  /** Default zoom level */
+  DEFAULT_SCALE: 1,
+} as const;

@@ -4,22 +4,31 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
   padding: 1rem;
   min-height: 0;
-  cursor: grab;
   user-select: none;
-  /* Allow native touch scrolling - mouse drag is handled separately via pointer events */
-  touch-action: pan-x pan-y;
-}
-
-.boardContainer.dragging {
-  cursor: grabbing;
+  cursor: grab;
+  /* Pinch-zoom and pan handled by react-zoom-pan-pinch library */
 }
 
 .boardContainer:active {
   cursor: grabbing;
+}
+
+/* Transform wrapper from react-zoom-pan-pinch - fills container */
+.transformWrapper {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Transform content - centers the board */
+.transformContent {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
 }
 
 .board {
@@ -30,7 +39,6 @@
   border-radius: 12px;
   box-shadow: var(--shadow-md);
   width: max-content;
-  margin: auto;
   flex-shrink: 0;
 }
 

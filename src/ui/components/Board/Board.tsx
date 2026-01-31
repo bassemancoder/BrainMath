@@ -1,15 +1,16 @@
 /**
  * Board Component - Crossword-style game grid display
- * 
+ *
  * Renders a sparse grid where null cells are empty spaces.
- * Supports drag-to-scroll for panning large puzzles.
+ * Supports pinch-to-zoom and pan via react-zoom-pan-pinch library.
  */
 
 import React, { useEffect, useRef, useMemo } from 'react';
 import type { Grid, CellError, Cell as CellType } from '@domain/types';
 import { isNumberCell, isOperatorCell, isResultCell, isEqualsCell, isEmptyCell } from '@domain/entities/Cell';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { Cell } from '../Cell/Cell';
-import { useBoardDrag } from './useBoardDrag';
+import { Zoom } from '@domain/constants';
 import styles from './Board.module.css';
 
 // ============================================
@@ -51,23 +52,11 @@ export const Board: React.FC<BoardProps> = ({
   // ----------------------------------------
   // Refs for auto-scrolling
   // ----------------------------------------
-  
+
   /** Ref for scrolling hinted cell into view */
   const hintedCellRef = useRef<HTMLDivElement>(null);
   /** Ref for scrolling first highlighted cell into view */
   const firstHighlightedRef = useRef<HTMLDivElement>(null);
-
-  // ----------------------------------------
-  // Drag-to-scroll functionality
-  // ----------------------------------------
-  
-  const {
-    containerRef,
-    isDragging,
-    handlePointerDown,
-    handlePointerMove,
-    handlePointerUp,
-  } = useBoardDrag();
 
   // ----------------------------------------
   // Auto-scroll Effects
@@ -280,41 +269,50 @@ export const Board: React.FC<BoardProps> = ({
   };
 
   return (
-    <div
-      ref={containerRef}
-      className={`${styles.boardContainer} ${isDragging ? styles.dragging : ''}`}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-    >
-      <div
-        className={styles.board}
-        style={{
-          gridTemplateColumns: `auto repeat(${displayWidth}, auto)`,
-          gridTemplateRows: `auto repeat(${displayHeight}, auto)`,
-        }}
+    <div className={styles.boardContainer}>
+      <TransformWrapper
+        initialScale={Zoom.DEFAULT_SCALE}
+        minScale={Zoom.MIN_SCALE}
+        maxScale={Zoom.MAX_SCALE}
+        centerOnInit={true}
+        wheel={{ step: 0.1 }}
+        pinch={{ step: 5 }}
+        doubleClick={{ disabled: true }}
       >
-        {/* Top row: column headers */}
-        {renderColumnHeaders()}
-        
-        {/* Grid rows with row index on left side only */}
-        {Array.from({ length: displayHeight }).map((_, rowOffset) => {
-          const rowIndex = minRow + rowOffset;
-          return (
-            <React.Fragment key={`row-${rowIndex}`}>
-              {/* Left row index */}
-              {renderRowIndex(rowOffset)}
-              
-              {/* Grid cells */}
-              {Array.from({ length: displayWidth }).map((_, colOffset) => {
-                const colIndex = minCol + colOffset;
-                const cell = grid.cells[rowIndex]?.[colIndex] ?? null;
-                return renderCell(cell, rowIndex, colIndex);
-              })}
-            </React.Fragment>
-          );
-        })}
-      </div>
+        <TransformComponent
+          wrapperClass={styles.transformWrapper}
+          contentClass={styles.transformContent}
+        >
+          <div
+            className={styles.board}
+            style={{
+              gridTemplateColumns: `auto repeat(${displayWidth}, auto)`,
+              gridTemplateRows: `auto repeat(${displayHeight}, auto)`,
+            }}
+          >
+            {/* Top row: column headers */}
+            {renderColumnHeaders()}
+
+            {/* Grid rows with row index on left side only */}
+            {Array.from({ length: displayHeight }).map((_, rowOffset) => {
+              const rowIndex = minRow + rowOffset;
+              return (
+                <React.Fragment key={`row-${rowIndex}`}>
+                  {/* Left row index */}
+                  {renderRowIndex(rowOffset)}
+
+                  {/* Grid cells */}
+                  {Array.from({ length: displayWidth }).map((_, colOffset) => {
+                    const colIndex = minCol + colOffset;
+                    const cell = grid.cells[rowIndex]?.[colIndex] ?? null;
+                    return renderCell(cell, rowIndex, colIndex);
+                  })}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </TransformComponent>
+      </TransformWrapper>
     </div>
   );
 };
