@@ -10,6 +10,8 @@
   min-height: 0;
   cursor: grab;
   user-select: none;
+  /* Allow native touch scrolling - mouse drag is handled separately via pointer events */
+  touch-action: pan-x pan-y;
 }
 
 .boardContainer.dragging {

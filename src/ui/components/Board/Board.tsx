@@ -64,13 +64,9 @@ export const Board: React.FC<BoardProps> = ({
   const {
     containerRef,
     isDragging,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    handleMouseLeave,
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
   } = useBoardDrag();
 
   // ----------------------------------------
@@ -287,13 +283,9 @@ export const Board: React.FC<BoardProps> = ({
     <div
       ref={containerRef}
       className={`${styles.boardContainer} ${isDragging ? styles.dragging : ''}`}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
     >
       <div
         className={styles.board}
