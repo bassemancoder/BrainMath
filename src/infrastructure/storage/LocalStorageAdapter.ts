@@ -127,6 +127,29 @@ export const localStorageAdapter: StoragePort = {
       console.error('Failed to clear history:', error);
     }
   },
+  
+  getSavedGames(): SavedGameState[] {
+    try {
+      const games = getAllSavedGames();
+      const now = Date.now();
+      
+      // Filter out expired games and convert to array
+      const validGames = Object.values(games).filter(state => {
+        const savedTime = new Date(state.savedAt).getTime();
+        return now - savedTime <= StorageExpiry.GAME_STATE_MS;
+      });
+      
+      // Sort by savedAt descending (newest first)
+      validGames.sort((a, b) => 
+        new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime()
+      );
+      
+      return validGames;
+    } catch (error) {
+      console.error('Failed to get saved games:', error);
+      return [];
+    }
+  },
 };
 
 /**

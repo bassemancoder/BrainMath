@@ -1,11 +1,12 @@
 /**
- * History Component - Shows completed games with replay option
+ * History Component - Shows unfinished games and completed games
  */
 
 import React, { useState } from 'react';
-import type { GameHistoryEntry } from '@application/ports/StoragePort';
+import type { GameHistoryEntry, SavedGameState } from '@application/ports/StoragePort';
 import { localStorageAdapter } from '@infrastructure/storage/LocalStorageAdapter';
 import { getGridSizeLabel, getDifficultyLabel } from '@domain/services/DifficultySettings';
+import { parseHash } from '@domain/entities/GameHash';
 import { TimeFormat, Timing } from '@domain/constants';
 import styles from './History.module.css';
 
@@ -39,6 +40,7 @@ function formatTimestamp(isoString: string): string {
 export const History: React.FC<HistoryProps> = ({ onClose, onReplay }) => {
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
   const history = localStorageAdapter.getHistory();
+  const savedGames = localStorageAdapter.getSavedGames();
 
   const handleCopyHash = async (hash: string) => {
     try {
@@ -55,6 +57,8 @@ export const History: React.FC<HistoryProps> = ({ onClose, onReplay }) => {
     onClose();
   };
 
+  const hasNoGames = history.length === 0 && savedGames.length === 0;
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
@@ -64,47 +68,94 @@ export const History: React.FC<HistoryProps> = ({ onClose, onReplay }) => {
         
         <h2 className={styles.title}>Game History</h2>
         
-        {history.length === 0 ? (
+        {hasNoGames ? (
           <div className={styles.emptyState}>
-            <p>No completed games yet.</p>
+            <p>No games yet.</p>
             <p className={styles.emptyHint}>Start playing to build your history!</p>
           </div>
         ) : (
           <div className={styles.historyList}>
-            {history.map((entry: GameHistoryEntry) => (
-              <div key={`${entry.hash}-${entry.completedAt}`} className={styles.historyItem}>
-                <div className={styles.itemHeader}>
-                  <button
-                    className={styles.hashButton}
-                    onClick={() => handleCopyHash(entry.hash)}
-                    title="Copy puzzle code"
-                  >
-                    {entry.hash}
-                    {copiedHash === entry.hash && <span className={styles.copied}>✓</span>}
-                  </button>
-                  <span className={styles.timestamp}>{formatTimestamp(entry.completedAt)}</span>
-                </div>
-                
-                <div className={styles.itemDetails}>
-                  <span className={styles.detail}>
-                    {getGridSizeLabel(entry.gridSize)} • {getDifficultyLabel(entry.difficulty)}
-                  </span>
-                  <span className={styles.detail}>
-                    ⏱ {formatTime(entry.timeSeconds)}
-                  </span>
-                  <span className={styles.detail}>
-                    🏆 {entry.score}
-                  </span>
-                </div>
-                
-                <button
-                  className={styles.replayButton}
-                  onClick={() => handleReplay(entry.hash)}
-                >
-                  Play Again
-                </button>
-              </div>
-            ))}
+            {/* Unfinished Games Section */}
+            {savedGames.length > 0 && (
+              <>
+                <h3 className={styles.sectionTitle}>Continue Playing</h3>
+                {savedGames.map((game: SavedGameState) => {
+                  const parsed = parseHash(game.hash);
+                  return (
+                    <div key={game.hash} className={`${styles.historyItem} ${styles.unfinishedItem}`}>
+                      <div className={styles.itemHeader}>
+                        <button
+                          className={styles.hashButton}
+                          onClick={() => handleCopyHash(game.hash)}
+                          title="Copy puzzle code"
+                        >
+                          {game.hash}
+                          {copiedHash === game.hash && <span className={styles.copied}>✓</span>}
+                        </button>
+                        <span className={styles.timestamp}>{formatTimestamp(game.savedAt)}</span>
+                      </div>
+                      
+                      <div className={styles.itemDetails}>
+                        <span className={styles.detail}>
+                          {getGridSizeLabel(parsed.size)} • {getDifficultyLabel(parsed.difficulty)}
+                        </span>
+                        <span className={styles.detail}>
+                          ⏱ {formatTime(game.timer)}
+                        </span>
+                      </div>
+                      
+                      <button
+                        className={styles.continueButton}
+                        onClick={() => handleReplay(game.hash)}
+                      >
+                        Continue
+                      </button>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+            
+            {/* Completed Games Section */}
+            {history.length > 0 && (
+              <>
+                <h3 className={styles.sectionTitle}>Completed</h3>
+                {history.map((entry: GameHistoryEntry) => (
+                  <div key={`${entry.hash}-${entry.completedAt}`} className={styles.historyItem}>
+                    <div className={styles.itemHeader}>
+                      <button
+                        className={styles.hashButton}
+                        onClick={() => handleCopyHash(entry.hash)}
+                        title="Copy puzzle code"
+                      >
+                        {entry.hash}
+                        {copiedHash === entry.hash && <span className={styles.copied}>✓</span>}
+                      </button>
+                      <span className={styles.timestamp}>{formatTimestamp(entry.completedAt)}</span>
+                    </div>
+                    
+                    <div className={styles.itemDetails}>
+                      <span className={styles.detail}>
+                        {getGridSizeLabel(entry.gridSize)} • {getDifficultyLabel(entry.difficulty)}
+                      </span>
+                      <span className={styles.detail}>
+                        ⏱ {formatTime(entry.timeSeconds)}
+                      </span>
+                      <span className={styles.detail}>
+                        🏆 {entry.score}
+                      </span>
+                    </div>
+                    
+                    <button
+                      className={styles.replayButton}
+                      onClick={() => handleReplay(entry.hash)}
+                    >
+                      Play Again
+                    </button>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         )}
         

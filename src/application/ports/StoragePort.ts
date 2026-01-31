@@ -84,4 +84,9 @@ export interface StoragePort {
    * Clears game history
    */
   clearHistory(): void;
+  
+  /**
+   * Gets all saved (unfinished) game states, newest first
+   */
+  getSavedGames(): SavedGameState[];
 }
