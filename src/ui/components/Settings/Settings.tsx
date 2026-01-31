@@ -189,23 +189,25 @@ export const Settings: React.FC<SettingsProps> = ({
           <h2 className={styles.title}>Brain Math</h2>
         </div>
         <p className={styles.subtitle}>
-          Solve the math puzzle by filling in the missing numbers.{' '}
+          Solve the math puzzle by filling in the missing numbers.
+        </p>
+
+        <div className={styles.chipRow}>
           <button
-            className={styles.rulesLink}
+            className={styles.chip}
             onClick={() => setShowHelp(true)}
             type="button"
           >
-            Read rules
+            Rules
           </button>
-          {' • '}
           <button
-            className={styles.rulesLink}
+            className={styles.chip}
             onClick={() => setShowHistory(true)}
             type="button"
           >
             History
           </button>
-        </p>
+        </div>
 
         {!showHashInput ? (
           <>

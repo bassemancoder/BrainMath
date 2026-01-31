@@ -103,20 +103,34 @@
   text-align: center;
 }
 
-.rulesLink {
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  font-size: inherit;
-  font-family: inherit;
-  cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-  transition: opacity 0.15s ease;
+/* Chip/pill buttons */
+.chipRow {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
-.rulesLink:hover {
-  opacity: 0.8;
+.chip {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.35rem 0.75rem;
+  transition: all 0.15s ease;
+}
+
+.chip:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.chip:active {
+  transform: scale(0.96);
 }
 
 .section {
