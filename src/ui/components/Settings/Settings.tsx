@@ -25,7 +25,7 @@ interface SettingsProps {
 }
 
 /** Mini preview of a grid layout - shows structure without numbers */
-const MiniMap: React.FC<{ grid: Grid }> = ({ grid }) => {
+const MiniPreview: React.FC<{ grid: Grid }> = ({ grid }) => {
   // Calculate bounds to show only the used area
   let minRow = grid.height, maxRow = 0, minCol = grid.width, maxCol = 0;
   for (let r = 0; r < grid.height; r++) {
@@ -61,7 +61,7 @@ const MiniMap: React.FC<{ grid: Grid }> = ({ grid }) => {
     rows.push(<div key={r} className={styles.miniRow}>{cells}</div>);
   }
   
-  return <div className={styles.miniMap}>{rows}</div>;
+  return <div className={styles.miniPreview}>{rows}</div>;
 };
 
 export const Settings: React.FC<SettingsProps> = ({
@@ -275,7 +275,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   type="button"
                   disabled={isGenerating}
                 >
-                  🎲 Generate Map
+                  🎲 Generate Puzzle
                 </button>
               )}
               <button
@@ -299,7 +299,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   </div>
                 ) : previewGrid && (
                   <>
-                    <MiniMap grid={previewGrid} />
+                    <MiniPreview grid={previewGrid} />
                     <p className={styles.previewHash}>Code: {previewHash}</p>
                   </>
                 )}

@@ -94,6 +94,72 @@ function wouldExceedZeroRevealedLimit(
 }
 
 // ============================================
+// ENSURE MINIMUM BLANKS
+// ============================================
+
+/**
+ * Counts how many equations contain a specific cell
+ */
+function countEquationsContainingCell(grid: Grid, row: number, col: number): number {
+  return grid.equations.filter(eq =>
+    eq.numberCells.some(c => c.row === row && c.col === col)
+  ).length;
+}
+
+/**
+ * Ensures every equation has at least one blank (editable) cell.
+ * This prevents fully-revealed equations that serve no purpose in the puzzle.
+ * Prioritizes non-shared cells for removal to minimize impact on other equations.
+ */
+function ensureMinimumBlanksPerEquation(grid: Grid, rng: RandomGenerator): Grid {
+  let resultGrid = grid;
+  
+  for (const equation of resultGrid.equations) {
+    // Count editable (blank) cells in this equation
+    const editableCells = equation.numberCells.filter(cellPos => {
+      const cell = getCellAt(resultGrid, cellPos.row, cellPos.col);
+      return cell && isNumberCell(cell) && !cell.isFixed;
+    });
+    
+    // If equation already has at least one blank, skip it
+    if (editableCells.length > 0) continue;
+    
+    // This equation has no blanks - we need to force remove one cell
+    // Get all fixed cells in this equation
+    const fixedCells = equation.numberCells.filter(cellPos => {
+      const cell = getCellAt(resultGrid, cellPos.row, cellPos.col);
+      return cell && isNumberCell(cell) && cell.isFixed;
+    });
+    
+    if (fixedCells.length === 0) continue; // No cells to remove (shouldn't happen)
+    
+    // Sort by number of equations containing the cell (prefer non-shared cells)
+    // This minimizes cascading effects on other equations
+    const sortedCells = [...fixedCells].sort((a, b) => {
+      const countA = countEquationsContainingCell(resultGrid, a.row, a.col);
+      const countB = countEquationsContainingCell(resultGrid, b.row, b.col);
+      return countA - countB; // Prefer cells in fewer equations
+    });
+    
+    // Find cells with the minimum sharing count
+    const minCount = countEquationsContainingCell(resultGrid, sortedCells[0].row, sortedCells[0].col);
+    const leastSharedCells = sortedCells.filter(c => 
+      countEquationsContainingCell(resultGrid, c.row, c.col) === minCount
+    );
+    
+    // Randomly pick one from the least-shared cells for variety
+    const shuffled = [...leastSharedCells];
+    rng.shuffle(shuffled);
+    const cellToRemove = shuffled[0];
+    
+    // Mark this cell as editable
+    resultGrid = markCellsAsEditable(resultGrid, [{ row: cellToRemove.row, col: cellToRemove.col }]);
+  }
+  
+  return resultGrid;
+}
+
+// ============================================
 // CLUE REMOVAL
 // ============================================
 
@@ -148,6 +214,8 @@ export async function removeCluesAsync(
   // SKIP this for large puzzles - the hasUniqueSolution check is too slow
   const allNumberCells = getAllNumberCells(completedGrid);
   if (allNumberCells.length > Generation.MAX_NUMBER_CELLS_FOR_UNIQUE_CHECK) {
+    // Step 3: Final pass - ensure no equation is fully revealed
+    puzzleGrid = ensureMinimumBlanksPerEquation(puzzleGrid, rng);
     return puzzleGrid;
   }
   
@@ -183,6 +251,9 @@ export async function removeCluesAsync(
       removed++;
     }
   }
+  
+  // Step 3: Final pass - ensure no equation is fully revealed
+  puzzleGrid = ensureMinimumBlanksPerEquation(puzzleGrid, rng);
   
   return puzzleGrid;
 }
