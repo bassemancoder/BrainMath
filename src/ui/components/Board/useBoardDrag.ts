@@ -14,7 +14,9 @@ import { useState, useCallback, useRef, type RefObject } from 'react';
 
 /** Internal state for tracking drag operations */
 interface DragState {
-  /** Whether a drag operation is currently in progress */
+  /** Whether we're tracking a potential drag (mouse is down) */
+  isTracking: boolean;
+  /** Whether actual dragging/scrolling has started (moved past threshold) */
   isDragging: boolean;
   /** Starting X position of the drag (in page coordinates) */
   startX: number;
@@ -24,8 +26,6 @@ interface DragState {
   scrollLeft: number;
   /** Scroll position at drag start (vertical) */
   scrollTop: number;
-  /** Pointer ID for capture (mouse only) */
-  pointerId: number | null;
 }
 
 /** Return type for the useBoardDrag hook */
@@ -60,39 +60,23 @@ const DRAG_THRESHOLD = 5;
  * Uses Pointer Events API with pointerType filtering to only handle
  * mouse interactions. Touch scrolling is handled natively by the browser.
  * 
+ * Key behavior: Only starts drag scrolling after the user moves past the
+ * threshold, allowing normal clicks on cells to work as expected.
+ * 
  * @returns Object containing container ref and event handlers
- * 
- * @example
- * ```tsx
- * const { containerRef, isDragging, wasDragging, handlePointerDown, ... } = useBoardDrag();
- * 
- * return (
- *   <div
- *     ref={containerRef}
- *     className={isDragging ? 'dragging' : ''}
- *     onPointerDown={handlePointerDown}
- *     onPointerMove={handlePointerMove}
- *     onPointerUp={handlePointerUp}
- *   >
- *     {children}
- *   </div>
- * );
- * ```
  */
 export function useBoardDrag(): BoardDragHandlers {
   const containerRef = useRef<HTMLDivElement>(null);
   
   const [dragState, setDragState] = useState<DragState>({
+    isTracking: false,
     isDragging: false,
     startX: 0,
     startY: 0,
     scrollLeft: 0,
     scrollTop: 0,
-    pointerId: null,
   });
   
-  // Track if we've moved enough to consider it a drag (not a click)
-  const hasDraggedRef = useRef(false);
   // Track if a drag just completed (to suppress cell clicks)
   const wasDraggingRef = useRef(false);
 
@@ -104,26 +88,23 @@ export function useBoardDrag(): BoardDragHandlers {
     // Only handle mouse events, let touch events pass through for native scrolling
     if (e.pointerType !== 'mouse') return;
     
-    // Only start drag on left mouse button
+    // Only track on left mouse button
     if (e.button !== 0) return;
     
     const container = containerRef.current;
     if (!container) return;
     
-    // Reset drag tracking
-    hasDraggedRef.current = false;
+    // Reset wasDragging flag
     wasDraggingRef.current = false;
     
-    // Capture pointer to receive all subsequent events
-    container.setPointerCapture(e.pointerId);
-    
+    // Start tracking potential drag (don't capture yet - allow clicks to work)
     setDragState({
-      isDragging: true,
+      isTracking: true,
+      isDragging: false,
       startX: e.pageX - container.offsetLeft,
       startY: e.pageY - container.offsetTop,
       scrollLeft: container.scrollLeft,
       scrollTop: container.scrollTop,
-      pointerId: e.pointerId,
     });
   }, []);
 
@@ -131,22 +112,28 @@ export function useBoardDrag(): BoardDragHandlers {
     // Only handle mouse events
     if (e.pointerType !== 'mouse') return;
     
-    if (!dragState.isDragging) return;
+    // Must be tracking (mouse was pressed down)
+    if (!dragState.isTracking) return;
     
     const container = containerRef.current;
     if (!container) return;
-    
-    e.preventDefault();
     
     const x = e.pageX - container.offsetLeft;
     const y = e.pageY - container.offsetTop;
     const walkX = x - dragState.startX;
     const walkY = y - dragState.startY;
     
-    // Check if we've moved enough to be considered a drag
-    if (Math.abs(walkX) > DRAG_THRESHOLD || Math.abs(walkY) > DRAG_THRESHOLD) {
-      hasDraggedRef.current = true;
+    // Check if we've moved enough to start dragging
+    if (!dragState.isDragging) {
+      if (Math.abs(walkX) > DRAG_THRESHOLD || Math.abs(walkY) > DRAG_THRESHOLD) {
+        // Start actual dragging
+        setDragState(prev => ({ ...prev, isDragging: true }));
+      }
+      return; // Don't scroll yet until we're past the threshold
     }
+    
+    // We're dragging - prevent default and scroll
+    e.preventDefault();
     
     container.scrollLeft = dragState.scrollLeft - walkX;
     container.scrollTop = dragState.scrollTop - walkY;
@@ -156,27 +143,18 @@ export function useBoardDrag(): BoardDragHandlers {
     // Only handle mouse events
     if (e.pointerType !== 'mouse') return;
     
-    const container = containerRef.current;
-    
-    // Release pointer capture
-    if (container && dragState.pointerId !== null) {
-      try {
-        container.releasePointerCapture(dragState.pointerId);
-      } catch {
-        // Pointer capture may have already been released
-      }
+    // Track if we were dragging (to suppress cell clicks if needed)
+    if (dragState.isDragging) {
+      wasDraggingRef.current = true;
+      
+      // Clear wasDragging after a short delay to allow click events to check it
+      setTimeout(() => {
+        wasDraggingRef.current = false;
+      }, 100);
     }
     
-    // Track if we were dragging (to suppress cell clicks)
-    wasDraggingRef.current = hasDraggedRef.current;
-    
-    // Clear wasDragging after a short delay to allow click events to check it
-    setTimeout(() => {
-      wasDraggingRef.current = false;
-    }, 100);
-    
-    setDragState(prev => ({ ...prev, isDragging: false, pointerId: null }));
-  }, [dragState.pointerId]);
+    setDragState(prev => ({ ...prev, isTracking: false, isDragging: false }));
+  }, [dragState.isDragging]);
 
   // Getter function to check wasDragging - safe to call from event handlers
   const getWasDragging = useCallback(() => wasDraggingRef.current, []);
