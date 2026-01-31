@@ -1,7 +1,7 @@
 # BrainMath - AI Context
 
 > This file is automatically read by GitHub Copilot at the start of each chat session.
-> Last updated: January 13, 2026
+> Last updated: January 30, 2026
 
 ## Project Overview
 
@@ -25,7 +25,18 @@ src/
 ├── domain/           # Pure business logic (no side effects)
 │   ├── entities/     # Cell, Grid, GameHash factories + type guards
 │   ├── services/     # GeneratorService, ValidationService, EquationService, SolverService
-│   │   └── generator/  # CrosswordLayout module (split for maintainability)
+│   │   └── generator/  # Crossword layout module (highly modular)
+│   │       ├── CrosswordLayout.ts    # Main entry - orchestrates generation
+│   │       ├── LayoutContext.ts      # LayoutConfig + LayoutState classes
+│   │       ├── LayoutUtils.ts        # Shared utilities (yieldToBrowser, logging)
+│   │       ├── InitialPlacement.ts   # Places first equation at center
+│   │       ├── ConnectedPlacements.ts # Places equations connected to existing ones
+│   │       ├── ResultExtensions.ts   # Extends equations from result cells
+│   │       ├── PlacementUtils.ts     # Cell placement helpers
+│   │       ├── EquationGenerators.ts # Pure equation generation functions
+│   │       ├── ClueRemoval.ts        # Removes numbers for puzzle difficulty
+│   │       ├── GeneratorTypes.ts     # Shared types (Quadrant, IntersectionPoint)
+│   │       └── index.ts              # Re-exports all public APIs
 │   ├── types/        # All TypeScript interfaces
 │   ├── constants.ts  # All magic numbers (centralized)
 │   └── __tests__/    # Domain tests
@@ -38,8 +49,22 @@ src/
 │   └── url/          # UrlHashAdapter
 └── ui/               # React UI
     ├── components/   # React components (each in own folder with CSS Module)
-    ├── context/      # GameContext.tsx + gameReducer.ts
-    └── hooks/        # Custom hooks
+    ├── context/      # Game state management (modular)
+    │   ├── GameContext.tsx   # Provider + hooks (slim orchestrator)
+    │   ├── gameReducer.ts    # State reducer + action types
+    │   ├── gameState.ts      # Initial state + state types
+    │   ├── gameActions.ts    # Action type definitions
+    │   └── hooks/            # Game logic hooks
+    │       ├── useGameActions.ts   # Aggregates all action hooks
+    │       ├── useGameEffects.ts   # Side effects (timer, storage, URL)
+    │       └── actions/            # Specialized action hooks
+    │           ├── useGameLifecycle.ts  # start, reset, new game
+    │           ├── useGameInput.ts      # select, place, clear, undo
+    │           ├── useGameSettings.ts   # settings visibility/updates
+    │           ├── useGameModes.ts      # swap, uncertain, pencil, hints
+    │           ├── useGameDebug.ts      # debug dump, solve puzzle
+    │           └── useGameShare.ts      # clipboard, shareable URL
+    └── hooks/        # Custom UI hooks (useTheme)
 ```
 
 **Path Aliases** (configured in tsconfig.json):
@@ -93,10 +118,26 @@ Main puzzle generation facade:
 4. `generatePuzzleAsync` yields to browser to prevent UI freezing
 
 ### Generator Module (src/domain/services/generator/)
-- `CrosswordLayout.ts` - Core layout algorithm (center-based balanced expansion)
-- `EquationGenerators.ts` - Pure equation generation functions
+Highly modular architecture for crossword-style puzzle generation:
+
+**Core Layout:**
+- `CrosswordLayout.ts` - Main entry point, orchestrates the generation algorithm
+- `LayoutContext.ts` - `LayoutConfig` (immutable settings) + `LayoutState` (mutable state)
+- `LayoutUtils.ts` - Shared utilities (`yieldToBrowser`, debug logging)
+
+**Placement Strategies:**
+- `InitialPlacement.ts` - Places first equation at grid center
+- `ConnectedPlacements.ts` - Places equations connected to existing intersection points
+- `ResultExtensions.ts` - Extends equations from result cells (vertical extensions, result-as-input)
+- `PlacementUtils.ts` - Low-level cell placement helpers
+
+**Equation Generation:**
+- `EquationGenerators.ts` - Pure functions for 2/3/4-number equations with constraints
 - `ClueRemoval.ts` - Removes numbers while ensuring unique solution
-- `GeneratorTypes.ts` - Shared types (Quadrant, IntersectionPoint)
+
+**Types & Exports:**
+- `GeneratorTypes.ts` - Shared types (Quadrant, IntersectionPoint, ResultCellPosition)
+- `index.ts` - Re-exports all public APIs
 
 ### SolverService (src/domain/services/SolverService.ts)
 - `solve()` - backtracking solver
@@ -113,6 +154,19 @@ Main puzzle generation facade:
 - `evaluateEquation()` - left-to-right calculation
 - `applyOperator()` - handles individual operations
 - `validateEquation()` - compares calculated vs displayed result
+
+### ScoreService (src/domain/services/ScoreService.ts)
+- `calculateInitialScore()` - base score from enterable cells
+- `calculateScore()` - final score with time/hint/error penalties
+- `getScoreBreakdown()` - detailed score components for UI
+
+### ConstraintService (src/domain/services/ConstraintService.ts)
+- Constraint propagation for solver optimization
+- Domain reduction for number cells
+
+### DomainComputation (src/domain/services/DomainComputation.ts)
+- Pure domain computations for solver
+- Candidate value calculations
 
 ---
 
@@ -157,6 +211,31 @@ Intersection points sorted by quadrant population (least populated first). Ensur
 - Undo restores uncertain state automatically (captured in puzzle snapshot)
 - Persisted to localStorage with grid cells
 
+### 8. History Display Limits
+- Shows maximum **3 unfinished games** (continue playing)
+- Shows maximum **10 completed games** (history)
+- Limits defined in `Storage` constants (`constants.ts`)
+- Used by `History.tsx` component
+
+### 9. Modular Game Context Architecture
+The UI state management is split into specialized hooks for maintainability:
+
+**GameContext.tsx** - Slim orchestrator that:
+- Creates reducer with `useReducer`
+- Composes actions via `useGameActions()`
+- Manages effects via `useGameEffects()`
+
+**Action Hooks** (in `hooks/actions/`):
+- `useGameLifecycle` - `startGame()`, `startNewGame()`, `resetGame()`
+- `useGameInput` - `selectCell()`, `placeNumber()`, `clearCell()`, `undo()`
+- `useGameSettings` - `showSettings()`, `hideSettings()`, `updateSettings()`
+- `useGameModes` - `toggleSwapMode()`, `togglePencilMode()`, `useHint()`
+- `useGameDebug` - `debugDumpPuzzle()`, `solvePuzzle()` (localhost only)
+- `useGameShare` - `copyHashToClipboard()`, `getShareableUrl()`
+
+**Effect Hook:**
+- `useGameEffects` - Timer management, auto-save to localStorage, URL hash sync, win history recording
+
 ---
 
 ## Code Conventions
@@ -194,10 +273,24 @@ if (isNumberCell(cell) && cell.value !== null) { ... }
 
 **Location:** `src/domain/__tests__/`
 
-**Active tests:**
-- `intermediate-negatives.test.ts` - intermediate negative values
+**Unit Tests:**
+- `Cell.test.ts` - Cell factory functions and type guards
+- `GameHash.test.ts` - Hash encoding/decoding for shareable puzzles
+- `ScoreService.test.ts` - Score calculation with time/hint penalties
+- `GridService.test.ts` - Grid creation and cell manipulation
+- `ValidationService.test.ts` - Grid and equation validation
+- `EquationService.test.ts` - Equation evaluation and arithmetic operations
+
+**Integration/Feature Tests:**
+- `intermediate-negatives.test.ts` - intermediate negative values allowed
 - `quadrant-balance.test.ts` - grid distribution testing
+- `constraint-propagation.test.ts` - solver constraint propagation
+- `uniqueness-performance.test.ts` - unique solution check performance
+- `no-fully-revealed-equations.test.ts` - ensures puzzles have hidden cells
+- `vertical-equation-direction.test.ts` - vertical equation handling
+- `horizontal-rtl-equations.test.ts` - horizontal equation directions
 - `specific-puzzle.test.ts` - debugging specific hash issues
+- `generation-debug.test.ts` - puzzle generation debugging
 
 **Test helper:**
 ```typescript
@@ -240,9 +333,15 @@ function createTestRng(seed: string): RandomGenerator {
 | Task | File |
 |------|------|
 | Puzzle generation | `GeneratorService.ts`, `generator/CrosswordLayout.ts` |
+| Layout placement | `generator/InitialPlacement.ts`, `ConnectedPlacements.ts`, `ResultExtensions.ts` |
+| Equation math | `generator/EquationGenerators.ts`, `EquationService.ts` |
 | Validation logic | `ValidationService.ts`, `EquationService.ts` |
-| Solver/uniqueness | `SolverService.ts` |
+| Solver/uniqueness | `SolverService.ts`, `ConstraintService.ts` |
+| Scoring | `ScoreService.ts` |
 | Difficulty settings | `DifficultySettings.ts`, `constants.ts` |
-| UI state | `ui/context/GameContext.tsx`, `gameReducer.ts` |
+| UI state | `ui/context/GameContext.tsx`, `gameReducer.ts`, `gameState.ts` |
+| Game actions | `ui/context/hooks/useGameActions.ts`, `hooks/actions/*` |
+| Game effects | `ui/context/hooks/useGameEffects.ts` |
 | Cell operations | `entities/Cell.ts`, `GridService.ts` |
-| Tests | `domain/__tests__/*.test.ts` |
+| Game history | `ui/components/History/History.tsx` |
+| Unit tests | `domain/__tests__/*.test.ts` |

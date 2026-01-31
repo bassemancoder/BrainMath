@@ -7,7 +7,7 @@ import type { GameHistoryEntry, SavedGameState } from '@application/ports/Storag
 import { localStorageAdapter } from '@infrastructure/storage/LocalStorageAdapter';
 import { getGridSizeLabel, getDifficultyLabel } from '@domain/services/DifficultySettings';
 import { parseHash } from '@domain/entities/GameHash';
-import { TimeFormat, Timing } from '@domain/constants';
+import { TimeFormat, Timing, Storage } from '@domain/constants';
 import styles from './History.module.css';
 
 interface HistoryProps {
@@ -39,8 +39,12 @@ function formatTimestamp(isoString: string): string {
 
 export const History: React.FC<HistoryProps> = ({ onClose, onReplay }) => {
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
-  const history = localStorageAdapter.getHistory();
-  const savedGames = localStorageAdapter.getSavedGames();
+  const allHistory = localStorageAdapter.getHistory();
+  const allSavedGames = localStorageAdapter.getSavedGames();
+  
+  // Limit displayed games
+  const savedGames = allSavedGames.slice(0, Storage.MAX_SAVED_GAMES);
+  const history = allHistory.slice(0, Storage.MAX_HISTORY_ENTRIES);
 
   const handleCopyHash = async (hash: string) => {
     try {

@@ -12,7 +12,8 @@ A crossword-style math puzzle game where you fill in missing numbers to complete
 - ⏱️ **Timer & Best times** - Track your solving speed, compete against yourself
 - 🔗 **Shareable puzzles** - Each puzzle has a unique hash you can share with friends
 - 🌙 **Dark/Light mode** - Easy on the eyes
-- 💾 **Progress saved** - Your game state persists in local storage (up to 3 puzzles)
+- 💾 **Progress saved** - Your game state persists in local storage
+- 📜 **Game history** - Track completed games (10 recent) and resume unfinished ones (3 max)
 - 🔄 **Swap mode** - Easily swap two cells' values without clearing and re-entering
 - ↩️ **Unlimited undo** - Revert any mistake with the undo button
 - 🔢 **Number highlighting** - Click placed numbers to highlight matching cells on the board
@@ -72,10 +73,34 @@ npm run lint
 
 ```
 src/
-├── domain/          # Core game logic (entities, services)
-├── application/     # Use cases and ports
-├── infrastructure/  # External adapters (storage, URL)
-└── ui/              # React components and context
+├── domain/              # Core game logic
+│   ├── entities/        # Cell, Grid, GameHash
+│   ├── services/        # Generator, Validation, Solver, Equation, Score
+│   │   └── generator/   # Modular crossword layout generation
+│   │       ├── CrosswordLayout.ts    # Main orchestrator
+│   │       ├── InitialPlacement.ts   # Center placement
+│   │       ├── ConnectedPlacements.ts # Connected equations
+│   │       ├── ResultExtensions.ts   # Result cell extensions
+│   │       ├── EquationGenerators.ts # Math equation generation
+│   │       └── ClueRemoval.ts        # Puzzle difficulty
+│   ├── types/           # TypeScript interfaces
+│   ├── constants.ts     # All magic numbers centralized
+│   └── __tests__/       # Unit & integration tests
+├── application/         # Use cases and ports
+├── infrastructure/      # External adapters (storage, URL)
+└── ui/                  # React components and state
+    ├── components/      # UI components (Board, Cell, NumberPad, History...)
+    └── context/         # Modular state management
+        ├── GameContext.tsx   # Provider orchestrator
+        ├── gameReducer.ts    # State reducer
+        └── hooks/            # Action & effect hooks
+            ├── useGameActions.ts  # Aggregates all actions
+            ├── useGameEffects.ts  # Side effects
+            └── actions/           # Specialized hooks
+                ├── useGameLifecycle.ts
+                ├── useGameInput.ts
+                ├── useGameModes.ts
+                └── ...
 ```
 
 ## License
