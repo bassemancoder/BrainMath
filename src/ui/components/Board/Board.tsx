@@ -115,31 +115,84 @@ export const Board: React.FC<BoardProps> = ({
     }
   }, []);
 
+  /**
+   * Pans the view to center a specific cell using TransformWrapper's API.
+   */
+  const panToCell = useCallback((cellRef: React.RefObject<HTMLDivElement | null>) => {
+    if (!cellRef.current || !transformRef.current) return;
+
+    const ref = transformRef.current;
+    const wrapper = ref.instance.wrapperComponent;
+    const content = ref.instance.contentComponent;
+    if (!wrapper || !content) return;
+
+    const transformState = ref.instance.transformState;
+    if (!transformState) return;
+
+    const { scale, positionX, positionY } = transformState;
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const cellRect = cellRef.current.getBoundingClientRect();
+
+    // Calculate offset to center the cell in the viewport
+    const cellCenterX = cellRect.left + cellRect.width / 2;
+    const cellCenterY = cellRect.top + cellRect.height / 2;
+    const wrapperCenterX = wrapperRect.left + wrapperRect.width / 2;
+    const wrapperCenterY = wrapperRect.top + wrapperRect.height / 2;
+
+    const newX = positionX + (wrapperCenterX - cellCenterX);
+    const newY = positionY + (wrapperCenterY - cellCenterY);
+
+    ref.setTransform(newX, newY, scale, 300);
+  }, []);
+
+  /**
+   * Resets zoom to default scale and centers the puzzle.
+   */
+  const resetZoomAndCenter = useCallback(() => {
+    if (transformRef.current) {
+      transformRef.current.centerView(Zoom.DEFAULT_SCALE, 300);
+    }
+  }, []);
+
+  /**
+   * Handles double-click on the board container to reset zoom.
+   * Triggers on background areas AND empty cells, but NOT on interactive cells.
+   */
+  const handleContainerDoubleClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    // Only block interactive cells (role="button"), allow empty cells and background
+    const isOnInteractiveCell = (event.target as HTMLElement).closest('[role="button"]') !== null;
+    if (isOnInteractiveCell) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    resetZoomAndCenter();
+  }, [resetZoomAndCenter]);
+
   // ----------------------------------------
   // Auto-scroll Effects
   // ----------------------------------------
 
-  // Scroll hinted cell into view when it changes
+  // Pan to hinted cell when it changes (using transform API instead of scrollIntoView)
   useEffect(() => {
     if (hintedCell && hintedCellRef.current) {
-      hintedCellRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-        inline: 'center',
-      });
+      // Delay to ensure the cell is rendered and ref is assigned
+      const timeoutId = setTimeout(() => panToCell(hintedCellRef), 200);
+      return () => clearTimeout(timeoutId);
     }
-  }, [hintedCell]);
+  }, [hintedCell, panToCell]);
 
-  // Scroll first highlighted cell into view when highlightedNumber changes
+  // Pan to first highlighted cell when highlightedNumber changes
   useEffect(() => {
-    if (highlightedNumber !== null && highlightedNumber !== undefined && firstHighlightedRef.current) {
-      firstHighlightedRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-        inline: 'center',
-      });
+    if (highlightedNumber !== null && highlightedNumber !== undefined) {
+      // Delay to ensure the cell is rendered and ref is assigned
+      const timeoutId = setTimeout(() => {
+        if (firstHighlightedRef.current) {
+          panToCell(firstHighlightedRef);
+        }
+      }, 200);
+      return () => clearTimeout(timeoutId);
     }
-  }, [highlightedNumber]);
+  }, [highlightedNumber, panToCell]);
 
   // ----------------------------------------
   // Cell State Helpers
@@ -209,12 +262,12 @@ export const Board: React.FC<BoardProps> = ({
     if (cell === null) {
       return <div key={key} className={styles.empty} onClick={onDeselect} />;
     }
-    
+
     // Empty cell type - crossword gap
     if (isEmptyCell(cell)) {
       return <div key={key} className={styles.empty} onClick={onDeselect} />;
     }
-    
+
     // Equals cell - just show "="
     if (isEqualsCell(cell)) {
       return (
@@ -326,13 +379,13 @@ export const Board: React.FC<BoardProps> = ({
   };
 
   return (
-    <div className={styles.boardContainer}>
+    <div className={styles.boardContainer} onDoubleClick={handleContainerDoubleClick}>
       <TransformWrapper
         ref={transformRef}
         initialScale={Zoom.DEFAULT_SCALE}
         minScale={Zoom.MIN_SCALE}
         maxScale={Zoom.MAX_SCALE}
-        centerOnInit={true}
+        centerOnInit={false}
         centerZoomedOut={true}
         limitToBounds={true}
         wheel={{ step: 0.1 }}

@@ -195,6 +195,25 @@
   50% { box-shadow: 0 0 0 5px rgba(51, 154, 240, 0.2); }
 }
 
+/* Uncertain + Swap source combination - ensure swap visual takes precedence */
+.numberCell.uncertain.swapSource {
+  background: #339af0;
+  border-color: #1971c2;
+  border-style: dotted;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-style: italic;
+  box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.4);
+  animation: swapPulse 1s ease-in-out infinite;
+}
+
+[data-theme="dark"] .numberCell.uncertain.swapSource {
+  background: #1971c2;
+  border-color: #4dabf7;
+  color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.4);
+}
+
 /* Hint target cell (cell just filled by hint) */
 .numberCell.hintTarget {
   background: #d3f9d8;
