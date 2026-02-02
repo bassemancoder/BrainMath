@@ -165,7 +165,7 @@ describe('Board Component', () => {
       expect(props.initialScale).toBe(1);
       expect(props.minScale).toBe(0.25);
       expect(props.maxScale).toBe(3);
-      expect(props.centerOnInit).toBe(true);
+      expect(props.centerOnInit).toBe(false); // Puzzle starts at top-left
       expect(props.centerZoomedOut).toBe(true);
       expect(props.limitToBounds).toBe(true);
     });
