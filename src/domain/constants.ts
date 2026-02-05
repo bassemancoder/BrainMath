@@ -155,6 +155,8 @@ export const StorageKeys = {
   THEME: 'brainmath-theme',
   /** Key for storing game history (completed games) */
   GAME_HISTORY: 'brainmath_game_history',
+  /** Key for storing animations preference */
+  ANIMATIONS: 'brainmath-animations',
 } as const;
 
 // ============================================

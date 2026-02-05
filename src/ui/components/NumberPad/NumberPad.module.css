@@ -479,3 +479,16 @@
     border-radius: 8px;
   }
 }
+
+/* ============================================
+   USER PREFERENCE TO DISABLE ANIMATIONS
+   ============================================ */
+
+[data-animations="disabled"] .numberButton {
+  transition: none;
+}
+
+[data-animations="disabled"] .swapButton.swapPending {
+  animation: none;
+  opacity: 1;
+}

@@ -445,3 +445,40 @@
     font-size: 0.4rem;
   }
 }
+
+/* ============================================
+   USER PREFERENCE TO DISABLE ANIMATIONS
+   ============================================ */
+
+[data-animations="disabled"] .cell {
+  transition: none;
+}
+
+[data-animations="disabled"] .numberCell.selected {
+  animation: none;
+  box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.6);
+}
+
+[data-animations="disabled"] .numberCell.error {
+  animation: none;
+}
+
+[data-animations="disabled"] .numberCell.swapSource {
+  animation: none;
+}
+
+[data-animations="disabled"] .numberCell.uncertain.swapSource {
+  animation: none;
+}
+
+[data-animations="disabled"] .numberCell.hintTarget {
+  animation: none;
+}
+
+[data-animations="disabled"] .numberCell.errorHint {
+  animation: none;
+}
+
+[data-animations="disabled"] .numberCell.justPlaced {
+  animation: none;
+}

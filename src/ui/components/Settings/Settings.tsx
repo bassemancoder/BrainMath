@@ -9,6 +9,7 @@ import { isValidHash } from '@domain/entities/GameHash';
 import { createGameAsync, generateNewHash, type ProgressCallback } from '@application/useCases/CreateGameUseCase';
 import { seededRandomAdapter } from '@infrastructure/random/SeededRandom';
 import { useTheme } from '../../hooks/useTheme';
+import { useAnimations } from '../../hooks/useAnimations';
 import { Help } from '../Help/Help';
 import { History } from '../History/History';
 import styles from './Settings.module.css';
@@ -73,6 +74,7 @@ export const Settings: React.FC<SettingsProps> = ({
   showClose = true,
 }) => {
   const { theme, setTheme } = useTheme();
+  const { animations, setAnimations } = useAnimations();
   const [hashInput, setHashInput] = useState('');
   const [hashError, setHashError] = useState<string | null>(null);
   const [showHashInput, setShowHashInput] = useState(false);
@@ -327,6 +329,27 @@ export const Settings: React.FC<SettingsProps> = ({
                   type="button"
                 >
                   🌙 Dark
+                </button>
+              </div>
+            </div>
+
+            {/* Animations Section */}
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Animations</h3>
+              <div className={styles.themeToggle}>
+                <button
+                  className={`${styles.themeOption} ${animations === 'enabled' ? styles.selected : ''}`}
+                  onClick={() => setAnimations('enabled')}
+                  type="button"
+                >
+                  On
+                </button>
+                <button
+                  className={`${styles.themeOption} ${animations === 'disabled' ? styles.selected : ''}`}
+                  onClick={() => setAnimations('disabled')}
+                  type="button"
+                >
+                  Off
                 </button>
               </div>
             </div>

@@ -7,12 +7,14 @@ import { useGame } from './context/GameContext';
 import { Board, NumberPad, Timer, HashDisplay, GameOver, Settings, Help } from './components';
 import { calculateScore, getCellAt } from '@domain/services';
 import { useTheme } from './hooks/useTheme';
+import { useAnimations } from './hooks/useAnimations';
 import styles from './App.module.css';
 import logo from '../assets/logo.png';
 
 export const App: React.FC = () => {
   const { state, actions } = useGame();
   useTheme(); // Initialize theme (side effects only)
+  useAnimations(); // Initialize animations preference (side effects only)
   
   // Track if win dialog has been dismissed for current game
   const [winDialogDismissedForHash, setWinDialogDismissedForHash] = useState<string | null>(null);

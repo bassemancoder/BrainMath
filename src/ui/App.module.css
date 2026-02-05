@@ -270,3 +270,18 @@
     animation: none;
   }
 }
+
+/* ============================================
+   USER PREFERENCE TO DISABLE ANIMATIONS
+   ============================================ */
+
+[data-animations="disabled"] .heartbeat {
+  animation: none;
+}
+
+[data-animations="disabled"] .themeButton,
+[data-animations="disabled"] .settingsButton,
+[data-animations="disabled"] .helpButton,
+[data-animations="disabled"] .newGameButton {
+  transition: none;
+}
